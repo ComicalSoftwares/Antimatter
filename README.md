@@ -26,6 +26,8 @@ Here is a summary of all what Antimatter is capable of:
 Compared to feature rich and well-known IDEs like VS Code or Pycharm, Antimatter focuses on bringing essential features only and favorises the use of a minimalist and lighter code editor for editing Python files with ease. It also automates certain repetitive tasks like building tasks using .txt files containing the full pyinstaller (or whatever compiler you prefer) command and creating + activating .venv environments. 
 
 ## Contributing
-If you like this project, leave a star.Tell us any issues you've faced or features you think that will improve user experience.
+If you like this project, leave a star. Tell us any issues you've faced or features you think that will improve user experience.
 
 If you can, try forking this project and fix bugs/add features yourself and open a pull request, we'll be more than happy to review it and tell you any issues with it.
+
+For more information, we suggest you to read our code of conduct.
