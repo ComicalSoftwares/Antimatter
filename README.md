@@ -12,7 +12,8 @@ Antimatter uses the cutomtkinter GUI library aswell as a slightly modified versi
 It also uses pypresence to provide built-in rich presence and can compile your python projects too !
 
 ## Screenshot
-<img width="1600" height="900" alt="Screenshot From 2026-03-29 21-30-20" src="https://github.com/user-attachments/assets/97bed2e1-e221-4119-838c-73263366f1f5" />
+<img width="1024" height="576" alt="image" src="https://github.com/user-attachments/assets/1bebbb9a-64c6-414c-b976-8d5436e74724" />
+
 
 ## Key features
 Here is a summary of all what Antimatter is capable of:
@@ -20,7 +21,10 @@ Here is a summary of all what Antimatter is capable of:
 - Runing and compiling your python projects.
 - Discord Rich Presence.
 - Incredibly stable, blazing fast, and light on CPU and memory usage.
-- Automates repetitive common tasks such as creating and activating .venv environments
+- Automates repetitive common tasks such as creating and activating .venv environments.
+- Built-in terminal, it is non-interactive which means it is only used for basic commands that don't require giving an input after running the command, this feature's main purpose is debugging and not interacting with CLI programs.
+- Can check for issues by using pyflakes. (Too lazy to explain whats a pyflakes) Tho you need to know that it will only tell you whats wrong with your code once you click on the warning icon on your sidebar.
+- File manager coming soon.
 
 ## Why use Antimatter ?
 Compared to feature rich and well-known IDEs like VS Code or Pycharm, Antimatter focuses on bringing essential features only and favorises the use of a minimalist and lighter code editor for editing Python files with ease. It also automates certain repetitive tasks like building tasks using .txt files containing the full pyinstaller (or whatever compiler you prefer) command and creating + activating .venv environments. 
