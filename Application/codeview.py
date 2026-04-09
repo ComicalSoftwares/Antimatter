@@ -71,8 +71,8 @@ class CodeView(Text):
             colors=linenums_theme,
             borderwidth=kwargs.get("borderwidth", linenums_border),
         )
-        self._vs = ctk.CTkScrollbar(self._frame, orientation="vertical", command=self.yview, fg_color="#292827", width=14)
-        self._hs = ctk.CTkScrollbar(self._frame, orientation="horizontal", command=self.xview, fg_color="#292827")
+        self._vs = ctk.CTkScrollbar(self._frame, orientation="vertical", command=self.yview, fg_color="#1a1b26", width=17)
+        self._hs = ctk.CTkScrollbar(self._frame, orientation="horizontal", command=self.xview, fg_color="#1a1b26")
         self._line_numbers.grid(row=0, column=0, sticky="ns")
         self._vs.grid(row=0, column=2, sticky="ns")
         #self._hs.grid(row=1, column=1, sticky="we")
@@ -114,13 +114,8 @@ class CodeView(Text):
 
     def _create_context_menu(self) -> Menu:
         context_menu = Menu(self, tearoff=0)
-        popup_callback = lambda e: context_menu.tk_popup(e.x_root + 5, e.y_root + 5)
-
-        if self._windowingsystem == "aqua":
-            super().bind("<Button-2>", popup_callback)
-            super().bind("<Control-Button-1>", popup_callback)
-        else:
-            super().bind("<Button-3>", popup_callback)
+        popup_callback = context_menu.tk_popup(e.x_root + 5, e.y_root + 5)
+        super().bind("<Button-3>", _create_context_menu)
 
         if self._default_context_menu:
             contmand = "⌘" if self._windowingsystem == "aqua" else "Ctrl"

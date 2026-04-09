@@ -1,68 +1,103 @@
 # Imports
 #===============
 import customtkinter as ctk
-import tkinter as tk
 from tkinter import messagebox, filedialog
-from codeview import *
+import codeview
 import pygments.lexers
-from CTkMenuBar import *
-import os
+import CTkMenuBar
+from CTkMenuBar import CustomDropdownMenu
 import task
 import util
 from pypresence import Presence
+from PIL import Image
+import tkterminal
 import time
+import threading
+import subprocess
 
-# Discord Rich Presence
+# Discord Rich Presence 
 #========================
 client_id = '1487828344480464957'
 RPC = Presence(client_id)
-try:
-    RPC.connect()
+def discord():
+    try:
+        RPC.connect()
 
-    RPC.update( 
-        details="Doing absolutely nothing",
-        start=time.time(),
-        large_image="image",
-        large_text="Antimatter"
-    )
-except Exception as e:
-    print(f"ERROR: {e}")
-    pass
+        RPC.update( 
+            details="Doing absolutely nothing.",
+            start=time.time(),
+            large_image="image",
+            large_text="Antimatter"
+        )
+    except Exception as e:
+        print(f"ERROR: {e}")
+
+discord()
+
 # Window configuration
 #==========================
 
-app = ctk.CTk()
+app = ctk.CTk(className='Comical')
 app.title("Comical Antimatter 2026")
 app.geometry("1050x650")
+app.configure(fg_color="#16161e")
+
+# Import Icons for buttons
+#=========================
+undoI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/redo.png").transpose(Image.FLIP_LEFT_RIGHT), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/redo.png").transpose(Image.FLIP_LEFT_RIGHT))
+redoI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/redo.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/redo.png"))
+copyI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/copy.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/copy.png"))
+cutI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/cut.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/cut.png"))
+pasteI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/paste.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/paste.png"))
+termI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/term.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/term.png"))
+codeI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/code.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/code.png"))
+runI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/run.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/run.png"))
+issueI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/issue.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/issue.png"))
+flodI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/folder.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/folder.png"))
 
 # Define Menubar
 #==================
-menu = CTkMenuBar(app)
-menu.configure(fg_color="#292827")
+menu = CTkMenuBar.CTkMenuBar(app, border_width=0)
+menu.configure(fg_color="#16161e")
 app.config(menu=menu)
 
 # Editor
 #=========
-editor = ctk.CTkFrame(app)
-editor.pack(side="top", fill="both")
-editor.configure(fg_color="#292827")
-codeview = CodeView(editor, lexer=pygments.lexers.PythonLexer, color_scheme="mariana", height=200, font=("Consolas", 11))
-codeview.pack(side="top", fill="both", expand=True, padx=5, pady=5)
+menux = ctk.CTkFrame(app, corner_radius=0)
+menux.pack(side="left", expand=True, fill="both")
+menux.configure(fg_color="#16161e")
 
-# File management logic
+undo = ctk.CTkButton(menux, text="", command=lambda:codeview.event_generate("<<Undo>>"), fg_color="transparent", height=32, width=24, corner_radius=5, image=undoI)
+undo.pack(side="top", fill="x")
+
+redo = ctk.CTkButton(menux, text="", command=lambda:codeview.event_generate("<<Redo>>"), fg_color="transparent", height=32, width=24, corner_radius=5, image=redoI)
+redo.pack(side="top",fill="x")
+
+copy = ctk.CTkButton(menux, text="", command=lambda:codeview.event_generate("<<Copy>>"), fg_color="transparent", height=32, width=24, corner_radius=5, image=copyI)
+copy.pack(side="top", fill="x")
+
+paste= ctk.CTkButton(menux, text="", command=lambda:codeview.event_generate("<<Paste>>"), fg_color="transparent", height=32, width=24, corner_radius=5, image=pasteI)
+paste.pack(side="top", fill="x")
+
+cut = ctk.CTkButton(menux, text="", command=lambda:codeview.event_generate("<<Cut>>"), fg_color="transparent", height=32, width=24, corner_radius=5, image=cutI)
+cut.pack(side="top", fill="x")
+
+codeview = codeview.CodeView(app, lexer=pygments.lexers.PythonLexer, color_scheme="mariana", font=("DejaVu Sans Mono", 10), height=4000, width=500, undo=True, autoseparator=True)
+codeview.pack(side="bottom", expand=True, fill="both")
+
+tt = tkterminal.Terminal(app, width=5000, height=4000, background="black", insertbackground="white", foreground="white")
+tt.shell = True
+
+# Actions
 #========================
 current_dir = {"path": None}
 def new_file():
     new = messagebox.askyesno("New file", "Save changes made to this file before proceeding ?")
     if new:
         save_file()
-        codeview.delete("0.0", "end")
-        current_dir["path"] = None
-        app.title("Comical Antimatter 2026")
-    else:
-        codeview.delete("0.0", "end")
-        current_dir["path"] = None
-        app.title("Comical Antimatter 2026")
+    codeview.delete("0.0", "end")
+    current_dir["path"] = None
+    app.title("Comical Antimatter 2026")
     try:
         RPC.update(
             details = "Editing an unnamed file",
@@ -71,14 +106,11 @@ def new_file():
         )
     except Exception:
         pass
-
-def open_file():
+def open_file(event=None):
     global path
     new = messagebox.askyesno("Open file", "Save changes made to this file before proceeding ?")
     if new:
         save_file()
-    else:
-        pass
     path = filedialog.askopenfilename(title="Open file", filetypes=[("Python", "*.py"), ("Text", "*.txt"), ("All files", "*.*")])
     if not path:
         return
@@ -92,6 +124,7 @@ def open_file():
     codeview.insert("0.0", content)
     current_dir["path"] = path
     app.title(f"{path} - Comical Antimatter 2026")
+    codeview.edit_reset()
     try:
         RPC.update(
             details = f"Editing {path}",
@@ -100,7 +133,7 @@ def open_file():
         )
     except Exception:
         pass
-def save_file_as():
+def save_file_as(event=None):
     path2 = filedialog.asksaveasfilename(
             title="Save file As",
             defaultextension=".py",
@@ -108,16 +141,23 @@ def save_file_as():
         )
     if not path2:
         return False
+
     try:
         with open(path2, "w", encoding="utf-8") as f:
             f.write(codeview.get("0.0", "end-1c"))
+        with open(path2, "r", encoding="utf-8") as f:
+            content = f.read()
+        codeview.delete("0.0", "end")
+        codeview.insert("0.0", content)
+        current_dir["path"] = path2
+        app.title(f"{path2} - Comical Antimatter 2026")
     except Exception as e:
         messagebox.showerror("Save Error", f"Could not save file:\n{e}")
         return False
-        current_dir["path"] = path
+        current_dir["path"] = path2
         return True
 
-def save_file():
+def save_file(event=None):
     if not current_dir["path"]:
         return save_file_as()
     try:
@@ -127,6 +167,79 @@ def save_file():
         messagebox.showerror("Save Error", f"Could not save file:\n{e}")
         return False
     return True
+
+def Compile(event=None):
+    try:
+        RPC.update(
+            details = "Compiling project",
+            large_image = "image",
+            large_text = "Antimatter")
+    except Exception:
+        pass
+    task.compile()
+
+def Run(event=None):
+    try:
+        RPC.update(
+            details = "Debugging software",
+            large_image = "image",
+            large_text = "Antimatter")
+    except Exception:
+        pass
+    task.run()
+
+def fix_paste(event):
+    try:
+        text = event.widget.clipboard_get()
+        event.widget.insert("insert", text)
+        event.widget.see("insert")
+    except Exception as e:
+        print(e)
+        pass
+    return "break"
+codeview.bind("<Control-v>", fix_paste)
+codeview.bind("<<Paste>>", fix_paste)
+                
+def restore_codeview(event=None):
+    tt.pack_forget()
+    codeview.pack(side="bottom", expand=True, fill="both")
+    term.configure(command=terminal, image=termI)
+
+def terminal(event=None):
+    codeview.pack_forget()
+    tt.pack(side="top", expand=True, fill="both")
+    term.configure(command=restore_codeview, image=codeI)
+
+def Drun(event=None):
+    terminal()
+    path3 = filedialog.askopenfilename(title="Choose file to run", filetypes=[("Python", "*.py"), ("All files", "*.*")])
+    threading.Thread(target=tt.run_command(f"python3 -u {path3}"), daemon=True).start()
+
+def issues(event=None):
+    iss = ctk.CTk(className="IssuesAntimatter")
+    iss.geometry("700x400")
+    iss.title("Issues - Comical Antimatter 2026")
+    Iis = ctk.CTkTextbox(iss, width=5000, height=4000, state="disabled")
+    Iis.pack(side="top", expand=True, fill="both")
+    Out = subprocess.run(f'pyflakes {path}', capture_output=True, text=True, shell=True)
+    if Out.stdout == "":
+        Iis.configure(state="normal")
+        Iis.insert("0.0", "Nothing wrong with this file. Nice work !")
+        Iis.see("end")
+        Iis.configure(state="disabled")
+    else:
+        Iis.configure(state="normal")
+        Iis.insert("0.0", Out.stdout)
+        Iis.see("end")
+        Iis.configure(state="disabled")
+    iss.mainloop()
+    
+# Special Functions
+#===================
+term = ctk.CTkButton(menux, text="", command=terminal, fg_color="transparent", height=32, width=24, corner_radius=5, image=termI)
+term.pack(side="top", fill="x")
+error = ctk.CTkButton(menux, text="", command=issues, fg_color="transparent", height=32, width=24, corner_radius=5, image=issueI)
+error.pack(side="top", fill="x")
 
 # Add cascades
 #================
@@ -146,35 +259,35 @@ dropdown1.add_option(option="Save As", command=save_file_as)
 
 # Task options
 dropdown2 = CustomDropdownMenu(widget=Task)
-dropdown2.add_option(option="Run", command=
-    task.run,
-)
-dropdown2.add_option(option="Build project", command=
-    task.compile
-)
+dropdown2.add_option(option="Run", command=Drun)
+dropdown2.add_option(option="Run without debugger (Only for GUI apps)", command=Run)
+dropdown2.add_option(option="Build project", command=Compile)
+dropdown2.add_option(option="Open new terminal window", command=task.Terminal)
 
 # Tools options
 dropdown3 = CustomDropdownMenu(widget=Tools)
 dropdown3.add_option(option="Open Documentation")
 dropdown3.add_option(option="Configure Project", command=util.project)
+dropdown3.add_option(option="Update Antimatter", command=util.update)
+dropdown3.add_option(option="Reconnect to discord", command=discord)
 
- # Keybinds
- #=========
+# Keybinds
+#=========
 def _bind_focused(seq, func):
     try:
-        app.bind(seq, lambda ev, f=func: (f(), "break"))
+        app.bind(seq, lambda ev, f=func: (f(ev), "break"))
     except Exception:
         try:
-            app.bind(seq, lambda ev, f=func: f())
+            app.bind(seq, lambda ev, f=func: f(ev))
         except Exception:
             pass
 binds = [
     (['<Control-s>', '<Control-S>'], save_file),
-    (['<Control-Shitf-s>', '<Control-Shift-S>'], save_file_as),
+    (['<Control-Shift-s>', '<Control-Shift-S>'], save_file_as),
     (['<Control-o>', '<Control-O>'], open_file),
     (['<Control-n>', '<Control-N>'], new_file),
-    (['<F5>'], task.run),
-    (['<Control-F5>'], task.compile),
+    (['<F5>'], Drun),
+    (['<Control-F5>'], Compile),
     (['<Control-Shift-c>', '<Control-Shift-c>'], util.project),
     (['<Control-s>', '<Control-S>'], save_file)
 ]
