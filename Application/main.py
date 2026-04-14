@@ -9,12 +9,13 @@ from CTkMenuBar import CustomDropdownMenu
 import task
 import util
 from pypresence import Presence
-from PIL import Image
+from PIL import Image, ImageTk
 import tkterminal
 import time
 import threading
 import subprocess
 from pathlib import Path
+import platform
 
 # Define dynamic path
 #====================
@@ -41,11 +42,12 @@ discord()
 
 # Window configuration
 #==========================
-
 app = ctk.CTk(className='Comical')
 app.title("Comical Antimatter 2026")
 app.geometry("1050x650")
 app.configure(fg_color="#16161e")
+icon = ImageTk.PhotoImage(Image.open(f"{BASE_DIR}/AppIcon.png"))
+app.after(250, lambda: app.iconphoto(False, icon))
 
 # Import Icons for buttons
 #=========================
@@ -85,7 +87,7 @@ paste.pack(side="top", fill="x")
 cut = ctk.CTkButton(menux, text="", command=lambda:codeview.event_generate("<<Cut>>"), fg_color="transparent", height=32, width=24, corner_radius=5, image=cutI)
 cut.pack(side="top", fill="x")
 
-codeview = codeview.CodeView(app, lexer=pygments.lexers.PythonLexer, color_scheme="mariana", font=("DejaVu Sans Mono", 10), height=4000, width=500, undo=True, autoseparator=True)
+codeview = codeview.CodeView(app, lexer=pygments.lexers.PythonLexer, color_scheme="mariana", font=("Consolas", 12), height=4000, width=500, undo=True, autoseparator=True)
 codeview.pack(side="bottom", expand=True, fill="both")
 
 tt = tkterminal.Terminal(app, width=5000, height=4000, background="black", insertbackground="white", foreground="white")
@@ -216,7 +218,10 @@ def terminal(event=None):
 def Drun(event=None):
     terminal()
     path3 = filedialog.askopenfilename(title="Choose file to run", filetypes=[("Python", "*.py"), ("All files", "*.*")])
-    threading.Thread(target=lambda: tt.run_command(f"python3 -u {path3}"), daemon=True).start()
+    if platform.system() == "Windows":
+        threading.Thread(target=lambda: tt.run_command(f"python -u {path3}"), daemon=True).start()
+    else:
+        threading.Thread(target=lambda: tt.run_command(f"python3 -u {path3}"), daemon=True).start()
 
 def issues(event=None):
     iss = ctk.CTk(className="IssuesAntimatter")
