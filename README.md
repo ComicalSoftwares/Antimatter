@@ -1,4 +1,6 @@
-<img width="1024" height="1024" alt="AppIcon" src="https://github.com/user-attachments/assets/936d8510-ae54-4c25-963c-e9d0f64e38d6" />
+<p align="center">
+  <img width="500" height="500" alt="AppIcon" src="https://github.com/user-attachments/assets/936d8510-ae54-4c25-963c-e9d0f64e38d6" />
+</p>
 
 # Antimatter
 Lightweight Python IDE written in Python, supports Discord Rich Presence and building applications using pyinstaller.
