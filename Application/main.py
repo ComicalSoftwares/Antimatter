@@ -14,6 +14,11 @@ import tkterminal
 import time
 import threading
 import subprocess
+from pathlib import Path
+
+# Define dynamic path
+#====================
+BASE_DIR = Path(__file__).resolve().parent
 
 # Discord Rich Presence 
 #========================
@@ -44,16 +49,14 @@ app.configure(fg_color="#16161e")
 
 # Import Icons for buttons
 #=========================
-undoI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/redo.png").transpose(Image.FLIP_LEFT_RIGHT), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/redo.png").transpose(Image.FLIP_LEFT_RIGHT))
-redoI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/redo.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/redo.png"))
-copyI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/copy.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/copy.png"))
-cutI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/cut.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/cut.png"))
-pasteI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/paste.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/paste.png"))
-termI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/term.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/term.png"))
-codeI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/code.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/code.png"))
-runI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/run.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/run.png"))
-issueI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/issue.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/issue.png"))
-flodI = ctk.CTkImage(light_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/folder.png"), dark_image=Image.open(r"/home/rocky/Documents/Antimatter/Application/folder.png"))
+undoI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/redo.png").transpose(Image.FLIP_LEFT_RIGHT))
+redoI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/redo.png"))
+copyI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/copy.png"))
+cutI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/cut.png"))
+pasteI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/paste.png"))
+termI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/term.png"))
+codeI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/code.png"))
+issueI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/issue.png"))
 
 # Define Menubar
 #==================
@@ -213,7 +216,7 @@ def terminal(event=None):
 def Drun(event=None):
     terminal()
     path3 = filedialog.askopenfilename(title="Choose file to run", filetypes=[("Python", "*.py"), ("All files", "*.*")])
-    threading.Thread(target=tt.run_command(f"python3 -u {path3}"), daemon=True).start()
+    threading.Thread(target=lambda: tt.run_command(f"python3 -u {path3}"), daemon=True).start()
 
 def issues(event=None):
     iss = ctk.CTk(className="IssuesAntimatter")
@@ -221,7 +224,7 @@ def issues(event=None):
     iss.title("Issues - Comical Antimatter 2026")
     Iis = ctk.CTkTextbox(iss, width=5000, height=4000, state="disabled")
     Iis.pack(side="top", expand=True, fill="both")
-    Out = subprocess.run(f'pyflakes {path}', capture_output=True, text=True, shell=True)
+    Out = subprocess.run(f'pyflakes {current_dir}', capture_output=True, text=True, shell=True)
     if Out.stdout == "":
         Iis.configure(state="normal")
         Iis.insert("0.0", "Nothing wrong with this file. Nice work !")
