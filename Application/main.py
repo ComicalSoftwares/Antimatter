@@ -179,7 +179,8 @@ def Compile(event=None):
             details = "Compiling project",
             large_image = "image",
             large_text = "Antimatter")
-    except Exception:
+    except Exception as e:
+        print(e)
         pass
     task.compile()
 
@@ -189,7 +190,8 @@ def Run(event=None):
             details = "Debugging software",
             large_image = "image",
             large_text = "Antimatter")
-    except Exception:
+    except Exception as e:
+        print(e)
         pass
     task.run()
 
@@ -229,15 +231,17 @@ def issues(event=None):
     iss.title("Issues - Comical Antimatter 2026")
     Iis = ctk.CTkTextbox(iss, width=5000, height=4000, state="disabled")
     Iis.pack(side="top", expand=True, fill="both")
-    Out = subprocess.run(f'pyflakes {current_dir}', capture_output=True, text=True, shell=True)
-    if Out.stdout == "":
+    if isinstance(current_dir, dict):
+        actual_path = current_dir.get('path', '')
+    Out = subprocess.run(f'pyflakes {actual_path}', capture_output=True, text=True, shell=True)
+    if Out.stdout == "" and Out.stderr == "":
         Iis.configure(state="normal")
         Iis.insert("0.0", "Nothing wrong with this file. Nice work !")
         Iis.see("end")
         Iis.configure(state="disabled")
     else:
         Iis.configure(state="normal")
-        Iis.insert("0.0", Out.stdout)
+        Iis.insert("0.0", Out.stdout + Out.stderr)
         Iis.see("end")
         Iis.configure(state="disabled")
     iss.mainloop()

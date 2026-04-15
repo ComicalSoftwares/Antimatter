@@ -1,5 +1,4 @@
 import json
-import os
 import webbrowser
 import platform
 import subprocess
@@ -7,7 +6,7 @@ from tkinter import filedialog, messagebox
 import urllib.request
 import re
 
-CURRENT_VERSION = "1.0"
+CURRENT_VERSION = "1.1"
 
 def project():
     folder = filedialog.askdirectory(title="Choose project folder")
@@ -16,7 +15,7 @@ def project():
             subprocess.run(f"cd {folder}", shell=True)
             subprocess.run("python -m venv .venv", shell=True)
             if platform.system() == "Windows":
-                subprocess.run(".venv\Scripts\activate", shell=True)
+                subprocess.run(".venv/Scripts/activate", shell=True)
             else:
                 subprocess.run("source .venv/bin/activate", shell=True)
             messagebox.showinfo("Done", "Project configured successfully")
@@ -57,5 +56,6 @@ def update():
     compare = cmp_ver(latest_version_nums, current_version_nums)
     if compare <= 0:
         messagebox.showinfo("Update", "Antimatter is up-to-date.")
-    release_name = data.get("name") or latest_tag
-    messagebox.showinfo("Update available", f"Version {release_name} is available for download.")
+    else:
+        release_name = data.get("name") or latest_tag
+        messagebox.showinfo("Update available", f"Version {release_name} is available for download.")
