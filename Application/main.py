@@ -38,8 +38,6 @@ def discord():
     except Exception as e:
         print(f"ERROR: {e}")
 
-discord()
-
 # Window configuration
 #==========================
 app = ctk.CTk(className='Comical')
@@ -87,8 +85,8 @@ paste.pack(side="top", fill="x")
 cut = ctk.CTkButton(menux, text="", command=lambda:codeview.event_generate("<<Cut>>"), fg_color="transparent", height=32, width=24, corner_radius=5, image=cutI)
 cut.pack(side="top", fill="x")
 
-codeview = codeview.CodeView(app, lexer=pygments.lexers.PythonLexer, color_scheme="mariana", font=("Consolas", 12), height=4000, width=500, undo=True, autoseparator=True)
-codeview.pack(side="bottom", expand=True, fill="both")
+codeview = codeview.AntimatterEditor(app)
+codeview.pack(side="left", expand=True, fill="both")
 
 tt = tkterminal.Terminal(app, width=5000, height=4000, background="black", insertbackground="white", foreground="white")
 tt.shell = True
@@ -204,12 +202,13 @@ def fix_paste(event):
         print(e)
         pass
     return "break"
+
 codeview.bind("<Control-v>", fix_paste)
 codeview.bind("<<Paste>>", fix_paste)
-                
+
 def restore_codeview(event=None):
     tt.pack_forget()
-    codeview.pack(side="bottom", expand=True, fill="both")
+    codeview.pack(side="left", expand=True, fill="both")
     term.configure(command=terminal, image=termI)
 
 def terminal(event=None):
@@ -296,7 +295,7 @@ def _bind_focused(seq, func):
 binds = [
     (['<Control-s>', '<Control-S>'], save_file),
     (['<Control-Shift-s>', '<Control-Shift-S>'], save_file_as),
-    (['<Control-o>', '<Control-O>'], open_file),
+    (['<Control-o>', '<Control-O>'], lambda ev: [open_file(), "break"][1]),
     (['<Control-n>', '<Control-N>'], new_file),
     (['<F5>'], Drun),
     (['<Control-F5>'], Compile),
@@ -306,6 +305,8 @@ binds = [
 for seqs, fn in binds:
     for s in seqs:
         _bind_focused(s, fn)
+
+discord()
 
 # Mainloop
 #==============

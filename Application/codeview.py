@@ -1,328 +1,129 @@
-from __future__ import annotations
-
-import inspect
-from contextlib import suppress
-from pathlib import Path
-from tkinter import BaseWidget, Event, Menu, Misc, TclError, Text, ttk
-from tkinter.font import Font
-from typing import Any, Callable, Type, Union
-
+import customtkinter as ctk
+import tkinter as tk
 import pygments
-import pygments.lexer
-import pygments.lexers
-import toml
-from pyperclip import copy
+from pygments.lexers import PythonLexer
 from tklinenums import TkLineNumbers
 
-from schemeparser import _parse_scheme
-import customtkinter as ctk
-import threading
-color_schemes_dir = Path(__file__).parent / "colorschemes"
-
-LexerType = Union[Type[pygments.lexer.Lexer], pygments.lexer.Lexer]
-
-
-class Scrollbar(ttk.Scrollbar):
-    def __init__(self, master: CodeView, autohide: bool, *args, **kwargs) -> None:
-        super().__init__(master, *args, **kwargs)
-        self.autohide = autohide
-
-    def set(self, low: str, high: str) -> None:
-        if self.autohide:
-            if float(low) <= 0.0 and float(high) >= 1.0:
-                self.grid_remove()
-            else:
-                self.grid()
-        super().set(low, high)
-
-
-class CodeView(Text):
-    _w: str
-    _builtin_color_schemes = {"ayu-dark", "ayu-light", "dracula", "mariana", "monokai"}
-
-    def __init__(
-        self,
-        master: Misc | None = None,
-        lexer: LexerType = pygments.lexers.TextLexer,
-        color_scheme: dict[str, dict[str, str | int]] | str | None = None,
-        tab_width: int = 4,
-        linenums_theme: Callable[[], tuple[str, str]] | tuple[str, str] | None = None,
-        autohide_scrollbar: bool = True,
-        linenums_border: int = 0,
-        default_context_menu: bool = False,
-        **kwargs,
-    ) -> None:
-        self._frame = ttk.Frame(master)
-        self._frame.grid_rowconfigure(0, weight=1)
-        self._frame.grid_columnconfigure(1, weight=1)
-
-        kwargs.setdefault("wrap", "none")
-        kwargs.setdefault("font", ("monospace", 11))
-
-        linenum_justify = kwargs.pop("justify", "left")
-
-        super().__init__(self._frame, **kwargs)
-        super().grid(row=0, column=1, sticky="nswe")
-
-        self._line_numbers = TkLineNumbers(
-            self._frame,
-            self,
-            justify=linenum_justify,
-            colors=linenums_theme,
-            borderwidth=kwargs.get("borderwidth", linenums_border),
+class AntimatterEditor(ctk.CTkFrame):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, fg_color="#16161e", **kwargs)
+        
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        
+        # 1. THE TEXT CORE
+        self.text = tk.Text(
+            self, bg="#16161e", fg="#D8DEE9", insertbackground="white",
+            relief="flat", font=("Consolas", 12), undo=True,
+            highlightthickness=0, borderwidth=0, wrap="none",
+            width=300 # Reduced from 5000 for internal Tcl speed
         )
-        self._vs = ctk.CTkScrollbar(self._frame, orientation="vertical", command=self.yview, fg_color="#1a1b26", width=17)
-        self._hs = ctk.CTkScrollbar(self._frame, orientation="horizontal", command=self.xview, fg_color="#1a1b26")
-        self._line_numbers.grid(row=0, column=0, sticky="ns")
-        self._vs.grid(row=0, column=2, sticky="ns")
-        #self._hs.grid(row=1, column=1, sticky="we")
-        super().configure(
-            yscrollcommand=self.vertical_scroll,
-            xscrollcommand=self.horizontal_scroll,
-            tabs=Font(font=kwargs["font"]).measure(" " * tab_width),
-        )
+        self.text.grid(row=0, column=1, sticky="nsew")
 
-        self._context_menu = None
-        self._default_context_menu = default_context_menu
-        if default_context_menu:
-            self.context_menu
+        # 2. THE GUTTER (TkLineNumbers)
+        self.line_nums = TkLineNumbers(self, self.text, width=50, bg="#16161e", borderwidth=0)
+        self.line_nums.grid(row=0, column=0, sticky="ns")
 
-        contmand = "Command" if self._windowingsystem == "aqua" else "Control"
+        # 3. THE SCROLLBAR
+        self.v_scroll = ctk.CTkScrollbar(self, orientation="vertical", command=self.text.yview)
+        self.v_scroll.grid(row=0, column=2, sticky="ns")
+        
+        # --- THE CHLOROPHYLL MOVE: THE PROXY ---
+        # We rename the Tcl command for yview so we can wrap it
+        self._orig_yview = self.text._w + "_orig_yview"
+        self.tk.call("rename", self.text._w, self._orig_yview)
+        self.tk.createcommand(self.text._w, self._proxy_command)
 
-        super().bind(f"<{contmand}-c>", self._copy, add=True)
-        super().bind(f"<{contmand}-v>", self._paste, add=True)
-        super().bind(f"<{contmand}-a>", self._select_all, add=True)
-        super().bind(f"<{contmand}-Shift-Z>", self.redo, add=True)
-        super().bind("<<ContentChanged>>", self.scroll_line_update, add=True)
-        super().bind("<Button-1>", self._line_numbers.redraw, add=True)
+        # Link scrollbar
+        self.text.configure(yscrollcommand=self.v_scroll.set)
+        
+        # Highlighting state
+        self._highlight_job = None
+        self.setup_theme()
 
-        self._orig = f"{self._w}_widget"
-        self.tk.call("rename", self._w, self._orig)
-        self.tk.createcommand(self._w, self._cmd_proxy)
+        # Bindings
+        self.text.bind("<<Modified>>", self._on_modified)
+        self.text.bind("<Configure>", lambda e: self.line_nums.redraw())
 
-        self._set_lexer(lexer)
-        self._set_color_scheme(color_scheme)
+    def _proxy_command(self, *args):
+        """
+        Intercepts EVERY call to the text widget (scrolling, typing, inserting).
+        This is exactly how high-performance editors stay in sync.
+        """
+        # Execute the original command (the actual text action)
+        result = self.tk.call(self._orig_yview, *args)
 
-        self._line_numbers.redraw()
-
-    @property
-    def context_menu(self) -> Menu:
-        if self._context_menu is None:
-            self._context_menu = self._create_context_menu()
-
-        return self._context_menu
-
-    def _create_context_menu(self) -> Menu:
-        context_menu = Menu(self, tearoff=0)
-        popup_callback = context_menu.tk_popup(e.x_root + 5, e.y_root + 5)
-        super().bind("<Button-3>", _create_context_menu)
-
-        if self._default_context_menu:
-            contmand = "⌘" if self._windowingsystem == "aqua" else "Ctrl"
-
-            context_menu.add_command(
-                label="Undo", accelerator=f"{contmand}+Z", command=lambda: self.event_generate("<<Undo>>")
-            )
-            context_menu.add_command(
-                label="Redo", accelerator=f"{contmand}+Y", command=lambda: self.event_generate("<<Redo>>")
-            )
-            context_menu.add_separator()
-            context_menu.add_command(
-                label="Cut", accelerator=f"{contmand}+X", command=lambda: self.event_generate("<<Cut>>")
-            )
-            context_menu.add_command(label="Copy", accelerator=f"{contmand}+C", command=self._copy)
-            context_menu.add_command(label="Paste", accelerator=f"{contmand}+V", command=self._paste)
-            context_menu.add_command(
-                label="Select all", accelerator=f"{contmand}+A", command=self._select_all
-            )
-
-        return context_menu
-
-    def _select_all(self, *_) -> str:
-        self.tag_add("sel", "1.0", "end")
-        self.mark_set("insert", "end")
-        return "break"
-
-    def redo(self, event: Event | None = None) -> None:
-        try:
-            self.edit_redo()
-        except TclError:
-            pass
-
-    def _paste(self, *_):
-        insert = self.index(f"@0,0 + {self.cget('height') // 2} lines")
-
-        with suppress(TclError):
-            self.delete("sel.first", "sel.last")
-            self.tag_remove("sel", "1.0", "end")
-            self.insert("insert", self.clipboard_get())
-
-        self.see(insert)
-
-        return "break"
-
-    def _copy(self, *_):
-        text = self.get("sel.first", "sel.last")
-        if not text:
-            text = self.get("insert linestart", "insert lineend")
-
-        copy(text)
-
-        return "break"
-
-    def _cmd_proxy(self, command: str, *args) -> Any:
-        try:
-            if command in {"insert", "delete", "replace"}:
-                start_line = int(str(self.tk.call(self._orig, "index", args[0])).split(".")[0])
-                end_line = start_line
-                if len(args) == 3:
-                    end_line = int(str(self.tk.call(self._orig, "index", args[1])).split(".")[0]) - 1
-            result = self.tk.call(self._orig, command, *args)
-        except TclError as e:
-            error = str(e)
-            if 'tagged with "sel"' in error or "nothing to" in error:
-                return ""
-            if 'bad text index "tk::anchor1' in error or 'bad text index ""' in error:
-                return ""
-            raise e from None
-        if command == "insert":
-            if not args[0] == "insert":
-                start_line -= 1
-            lines = args[1].count("\n")
-            if lines == 1:
-                self.highlight_line(f"{start_line}.0")
-            else:
-                self.highlight_area(start_line, start_line + lines)
-            self.event_generate("<<ContentChanged>>")
-        elif command in {"replace", "delete"}:
-            if start_line == end_line:
-                self.highlight_line(f"{start_line}.0")
-            else:
-                self.highlight_area(start_line, end_line)
-            self.event_generate("<<ContentChanged>>")
-
+        # If the action was a scroll or a change, redraw line numbers INSTANTLY
+        if args[0] in ("yview", "insert", "delete", "replace"):
+            self.line_nums.redraw()
+            
         return result
 
-    def _setup_tags(self, tags: dict[str, str]) -> None:
-        for key, value in tags.items():
-            if isinstance(value, str):
-                self.tag_configure(f"Token.{key}", foreground=value)
+    def _on_modified(self, event=None):
+        """Triggers when text actually changes"""
+        self.line_nums.redraw()
+        self.on_key() # Trigger the delayed highlighter
+        self.text.edit_modified(False) # Reset the modified flag
 
-    def highlight_line(self, index: str) -> None:
-        line_num = int(self.index(index).split(".")[0])
-        for tag in self.tag_names(index=None):
-            if tag.startswith("Token"):
-                self.tag_remove(tag, f"{line_num}.0", f"{line_num}.end")
+    def sync_scroll(self, *args):
+        """Used by external calls if needed"""
+        self.text.yview(*args)
+        self.v_scroll.set(*args)
+        self.line_nums.redraw()
+    def setup_theme(self):
+        theme = {
+            "Keyword": "#C594C5", "Name.Builtin": "#6699CC",
+            "String": "#99C794",  "Comment": "#A6ACB9",
+            "Name.Function": "#5FB3B3", "Operator": "#F99157", "Number": "#F99157"
+        }
+        for tag, color in theme.items():
+            self.text.tag_configure(tag, foreground=color)
 
-        line_text = self.get(f"{line_num}.0", f"{line_num}.end")
-        start_col = 0
+    def highlight(self):
+        try:
+            content = self.text.get("1.0", "end-1c")
+            for tag in ["Keyword", "Name.Builtin", "String", "Comment", "Name.Function", "Operator", "Number"]:
+                self.text.tag_remove(tag, "1.0", "end")
+            
+            lexer = PythonLexer()
+            offset = 0
+            for token, text_val in pygments.lex(content, lexer):
+                start = f"1.0+{offset}c"
+                end = f"1.0+{offset + len(text_val)}c"
+                token_str = str(token)
+                if "Keyword" in token_str: self.text.tag_add("Keyword", start, end)
+                elif "Builtin" in token_str: self.text.tag_add("Name.Builtin", start, end)
+                elif "String" in token_str: self.text.tag_add("String", start, end)
+                elif "Comment" in token_str: self.text.tag_add("Comment", start, end)
+                elif "Function" in token_str: self.text.tag_add("Name.Function", start, end)
+                elif "Operator" in token_str: self.text.tag_add("Operator", start, end)
+                elif "Number" in token_str: self.text.tag_add("Number", start, end)
+                offset += len(text_val)
+        except: pass
 
-        for token, text in pygments.lex(line_text, self._lexer):
-            token = str(token)
-            end_col = start_col + len(text)
-            if token not in {"Token.Text.Whitespace", "Token.Text"}:
-                self.tag_add(token, f"{line_num}.{start_col}", f"{line_num}.{end_col}")
-            start_col = end_col
+    def on_key(self, event=None):
+        # 1. Update line numbers IMMEDIATELY (no delay)
+        self.line_nums.redraw()
+        
+        # 2. Debounce the heavy highlighting work
+        if self._highlight_job:
+            self.after_cancel(self._highlight_job)
+        self._highlight_job = self.after(100, self.highlight)
 
-    def highlight_all(self) -> None:
-        for tag in self.tag_names(index=None):
-            if tag.startswith("Token"):
-                self.tag_remove(tag, "1.0", "end")
+    # Compatibility methods
+    def get(self, *args): return self.text.get(*args)
+    def delete(self, *args): self.text.delete(*args); self.on_key()
+    def insert(self, *args, **kwargs): self.text.insert(*args, **kwargs); self.on_key()
+    def yview(self, *args): return self.text.yview(*args)
+    def index(self, *args): return self.text.index(*args)
 
-        lines = self.get("1.0", "end")
-        line_offset = lines.count("\n") - lines.lstrip().count("\n")
-        start_index = str(self.tk.call(self._orig, "index", f"1.0 + {line_offset} lines"))
+    def edit_reset(self): 
+        self.text.edit_reset()
 
-        for token, text in pygments.lex(lines, self._lexer):
-            token = str(token)
-            end_index = self.index(f"{start_index} + {len(text)} chars")
-            if token not in {"Token.Text.Whitespace", "Token.Text"}:
-                self.tag_add(token, start_index, end_index)
-            start_index = end_index
+    def edit_modified(self, arg=None):
+        return self.text.edit_modified(arg)
 
-    def highlight_area(self, start_line: int | None = None, end_line: int | None = None) -> None:
-        for tag in self.tag_names(index=None):
-            if tag.startswith("Token"):
-                self.tag_remove(tag, f"{start_line}.0", f"{end_line}.end")
-
-        text = self.get(f"{start_line}.0", f"{end_line}.end")
-        line_offset = text.count("\n") - text.lstrip().count("\n")
-        start_index = str(self.tk.call(self._orig, "index", f"{start_line}.0 + {line_offset} lines"))
-        for token, text in pygments.lex(text, self._lexer):
-            token = str(token)
-            end_index = self.index(f"{start_index} + {len(text)} indices")
-            if token not in {"Token.Text.Whitespace", "Token.Text"}:
-                self.tag_add(token, start_index, end_index)
-            start_index = end_index
-
-    def _set_color_scheme(self, color_scheme: dict[str, dict[str, str | int]] | str | None) -> None:
-        if isinstance(color_scheme, str) and color_scheme in self._builtin_color_schemes:
-            color_scheme = toml.load(color_schemes_dir / f"{color_scheme}.toml")
-        elif color_scheme is None:
-            color_scheme = toml.load(color_schemes_dir / "dracula.toml")
-
-        assert isinstance(color_scheme, dict), "Must be a dictionary or a built-in color scheme"
-
-        config, tags = _parse_scheme(color_scheme)
-        self.configure(**config)
-        self._setup_tags(tags)
-
-        self.highlight_all()
-
-    def _set_lexer(self, lexer: LexerType) -> None:
-        self._lexer = lexer() if inspect.isclass(lexer) else lexer
-        self.highlight_all()
-
-    def __setitem__(self, key: str, value) -> None:
-        self.configure(**{key: value})
-
-    def __getitem__(self, key: str) -> Any:
-        return self.cget(key)
-
-    def configure(self, **kwargs) -> None:
-        lexer = kwargs.pop("lexer", None)
-        color_scheme = kwargs.pop("color_scheme", None)
-
-        if lexer is not None:
-            self._set_lexer(lexer)
-
-        if color_scheme is not None:
-            self._set_color_scheme(color_scheme)
-
-        super().configure(**kwargs)
-
-    config = configure
-
-    def pack(self, *args, **kwargs) -> None:
-        self._frame.pack(*args, **kwargs)
-
-    def grid(self, *args, **kwargs) -> None:
-        self._frame.grid(*args, **kwargs)
-
-    def place(self, *args, **kwargs) -> None:
-        self._frame.place(*args, **kwargs)
-
-    def pack_forget(self) -> None:
-        self._frame.pack_forget()
-
-    def grid_forget(self) -> None:
-        self._frame.grid_forget()
-
-    def place_forget(self) -> None:
-        self._frame.place_forget()
-
-    def destroy(self) -> None:
-        for widget in self._frame.winfo_children():
-            BaseWidget.destroy(widget)
-        BaseWidget.destroy(self._frame)
-
-    def horizontal_scroll(self, first: str | float, last: str | float) -> CodeView:
-        self._hs.set(first, last)
-
-    def vertical_scroll(self, first: str | float, last: str | float) -> CodeView:
-        self._vs.set(first, last)
-        self._line_numbers.redraw()
-
-    def scroll_line_update(self, event: Event | None = None) -> CodeView:
-        self.horizontal_scroll(*self.xview())
-        self.vertical_scroll(*self.yview())
+    def clear_undo(self):
+        self.text.edit_separator()
+        self.text.configure(undo=False)
+        self.text.configure(undo=True)
