@@ -1,0 +1,1 @@
+pyinstaller --noconfirm --onefile --windowed --add-data "AppIcon.png:." --add-data "code.png:." --add-data "codeview.py:." --add-data "copy.png:." --add-data "cut.png:." --add-data "issue.png:." --add-data "main.py:." --add-data "paste.png:." --add-data "redo.png:." --add-data "task.py:." --add-data "term.png:." --add-data "test.py:." --add-data "util.py:."  "main.py"
