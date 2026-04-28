@@ -1,1 +1,0 @@
-pyinstaller --noconfirm --onefile --windowed --name "Antimatter" --icon 'AppIcon.png' --add-data 'colorschemes:colorschemes' --add-data 'copy:.'  --add-data 'paste:.'  --add-data 'term:.'  --add-data 'code:.'  --add-data 'cut:.'  --add-data 'issues:.'  --add-data 'redo:.' --hidden-import="PIL._tkinter_finder" 'main.py'
