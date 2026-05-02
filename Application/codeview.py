@@ -13,16 +13,20 @@ class AntimatterEditor(ctk.CTkFrame):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
+        # Track font size
+        self.font_family = "Consolas"
+        self.font_size = 12
+
         # 1. THE TEXT CORE
         self.text = tk.Text(
             self, bg="#16161e", fg="#D8DEE9", insertbackground="white",
-            relief="flat", font=("Consolas", 12), undo=True,
+            relief="flat", font=(self.font_family, self.font_size), undo=True,
             highlightthickness=0, borderwidth=0, wrap="none",
             padx=10, pady=10, inactiveselectbackground="#2e3c64", width=300
         )
         self.text.grid(row=0, column=1, sticky="nsew")
 
-        # 2. THE GUTTER (Borderwidth 0)
+        # 2. THE GUTTER
         self.line_nums = TkLineNumbers(
             self, self.text, width=45, bg="#16161e", 
             borderwidth=0, highlightthickness=0, justify="center"
@@ -55,7 +59,23 @@ class AntimatterEditor(ctk.CTkFrame):
         self._setup_proxy()
         threading.Thread(target=self._highlighter_worker, daemon=True).start()
         self.text.bind("<Button-3>", self._show_context_menu)
+        
+        # Bind Ctrl + Scrollwheel for zooming
+        self.text.bind("<Control-MouseWheel>", self._handle_zoom)      # Windows/macOS
+        self.text.bind("<Control-Button-4>", self._handle_zoom)        # Linux Scroll Up
+        self.text.bind("<Control-Button-5>", self._handle_zoom)        # Linux Scroll Down
+        
         self.trigger_highlight()
+
+    def _handle_zoom(self, event):
+        """Adjust font size when Ctrl is held and scroll wheel is used."""
+        if event.num == 4 or event.delta > 0:
+            self.font_size += 1
+        elif event.num == 5 or event.delta < 0:
+            self.font_size = max(6, self.font_size - 1)
+        
+        self.text.configure(font=(self.font_family, self.font_size))
+        return "break" 
 
     def _setup_theme(self):
         """High-contrast theme mapping for Pygments tokens."""

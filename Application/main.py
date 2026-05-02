@@ -3,17 +3,15 @@
 import customtkinter as ctk
 from tkinter import messagebox, filedialog
 import codeview
-import pygments.lexers
 import CTkMenuBar
 from CTkMenuBar import CustomDropdownMenu
 import task
 import util
-from PIL import Image, ImageTk
-import tkterminal
+from PIL import Image
 import time
 from pathlib import Path
-import platform
 import subprocess
+import threading
 
 # Define dynamic path
 #====================
@@ -22,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # Discord Rich Presence 
 #========================
 def discord():
+    global RPC
     from pypresence import Presence
     client_id = '1487828344480464957'
     RPC = Presence(client_id)
@@ -43,8 +42,7 @@ app = ctk.CTk(className='Comical')
 app.title("Comical Antimatter 2026")
 app.geometry("1050x650")
 app.configure(fg_color="#16161e")
-icon = ImageTk.PhotoImage(Image.open(f"{BASE_DIR}/AppIcon.png"))
-app.after(250, lambda: app.iconphoto(False, icon))
+app.iconbitmap(f"{BASE_DIR}/AppIcon.ico")
 
 # Import Icons for buttons
 #=========================
@@ -87,8 +85,8 @@ cut.pack(side="top", fill="x")
 codeview = codeview.AntimatterEditor(app)
 codeview.pack(side="left", expand=True, fill="both")
 
-tt = tkterminal.Terminal(app, width=300, height=400, background="black", insertbackground="white", foreground="white")
-tt.shell = True
+output = ctk.CTkTextbox(app, width=5000, height=400, state="disabled")
+entry = ctk.CTkEntry(app, width=5000, placeholder_text="Type a command")
 
 # Actions
 #========================
@@ -206,28 +204,60 @@ codeview.bind("<Control-v>", fix_paste)
 codeview.bind("<<Paste>>", fix_paste)
 
 def restore_codeview(event=None):
-    tt.pack_forget()
+    output.pack_forget()
+    entry.pack_forget()
     codeview.pack(side="left", expand=True, fill="both")
     term.configure(command=terminal, image=termI)
 
 def terminal(event=None):
     codeview.pack_forget()
-    tt.pack(side="top", expand=True, fill="both")
+    
+    def command():
+        en = entry.get()
+        if not en: return 
+        
+        entry.delete(0, "end")
+        
+        output.configure(state="normal")
+        output.insert("end", f"\n> {en}\n")
+        output.configure(state="disabled")
+        output.see("end")
+    
+        try:
+           out = subprocess.run(en, shell=True, capture_output=True, text=True)
+           resultat = out.stdout + out.stderr
+        except Exception as e:
+           resultat = f"Erreur : {str(e)}"
+        
+        output.configure(state="normal")
+        output.insert("end", resultat + "\n")
+        output.configure(state="disabled")
+        output.see("end")
+
+    def begin(event=None):
+        threading.Thread(target=command, daemon=True).start()
+
     term.configure(command=restore_codeview, image=codeI)
+    output.pack(side="top", expand=True, fill="both", padx=10, pady=5)
+    entry.pack(side="bottom", fill="x", padx=10, pady=10)
+    entry.unbind("<Return>") 
+    entry.bind("<Return>", begin)
+
 
 def Drun(event=None):
-    import threading
+    import platform
     terminal()
     path3 = filedialog.askopenfilename(title="Choose file to run", filetypes=[("Python", "*.py"), ("All files", "*.*")])
     if platform.system() == "Windows":
-        threading.Thread(target=lambda: tt.run_command(f"python '{path3}'"), daemon=True).start()
+         entry.insert("end", f"python {path3}")
     else:
-        threading.Thread(target=lambda: tt.run_command(f"python3 '{path3}'"), daemon=True).start()
-
+         entry.insert("end", f"python3 {path3}")
+    
 def issues(event=None):
     iss = ctk.CTk(className="IssuesAntimatter")
     iss.geometry("700x400")
     iss.title("Issues - Comical Antimatter 2026")
+    iss.iconbitmap(f"{BASE_DIR}/AppIcon.ico")
     Iis = ctk.CTkTextbox(iss, width=500, height=400, state="disabled")
     Iis.pack(side="top", expand=True, fill="both")
     if isinstance(current_dir, dict):
@@ -300,7 +330,9 @@ binds = [
     (['<F5>'], Drun),
     (['<Control-F5>'], Compile),
     (['<Control-Shift-c>', '<Control-Shift-c>'], util.project),
-    (['<Control-s>', '<Control-S>'], save_file)
+    (['<Control-s>', '<Control-S>'], save_file),
+    (['<Control-i>', '<Control-I>'], issues),
+    (['<Control-t>', '<Control-T>'], terminal)
 ]
 for seqs, fn in binds:
     for s in seqs:

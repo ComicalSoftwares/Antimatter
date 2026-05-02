@@ -6,7 +6,7 @@ from tkinter import filedialog, messagebox
 import urllib.request
 import re
 
-CURRENT_VERSION = "1.2"
+CURRENT_VERSION = "1.3"
 
 def project():
     folder = filedialog.askdirectory(title="Choose project folder")
@@ -23,7 +23,7 @@ def project():
         except Exception as e:
             messagebox.showerror("Error", f"Couldn't configure project: \n{e}")
     else:
-        pass
+        print("An error occured while trying to create the environment !")
         
 def docs():
     webbrowser.open("www.github.com/ComicalSoftwares/Antimatter/Wiki")
