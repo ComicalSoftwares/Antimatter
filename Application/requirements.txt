@@ -1,0 +1,9 @@
+packaging
+customtkinter
+pygments
+tklinenums
+pypresence
+Pillow
+chlorophyll
+ctkmenubar
+setuptools

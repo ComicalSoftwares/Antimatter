@@ -41,8 +41,8 @@ def discord():
 app = ctk.CTk(className='Comical')
 app.title("Comical Antimatter 2026")
 app.geometry("1050x650")
-app.configure(fg_color="#16161e")
-app.iconbitmap(f"{BASE_DIR}/AppIcon.ico")
+app.configure(fg_color="#2d2d2e")
+#app.iconbitmap(f"{BASE_DIR}/AppIcon.ico") # Disable this line for Linux.
 
 # Import Icons for buttons
 #=========================
@@ -55,17 +55,17 @@ termI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/term.png"))
 codeI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/code.png"))
 issueI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/issue.png"))
 
-# Define Menubar
-#==================
+# Create Menubar & define it
+#=============================
 menu = CTkMenuBar.CTkMenuBar(app, border_width=0)
-menu.configure(fg_color="#16161e")
+menu.configure(fg_color="#2d2d2e")
 app.config(menu=menu)
 
 # Editor
 #=========
 menux = ctk.CTkFrame(app, corner_radius=0)
 menux.pack(side="left", expand=True, fill="y")
-menux.configure(fg_color="#16161e")
+menux.configure(fg_color="#2d2d2e")
 
 undo = ctk.CTkButton(menux, text="", command=lambda:codeview.event_generate("<<Undo>>"), fg_color="transparent", height=32, width=24, corner_radius=5, image=undoI)
 undo.pack(side="top", fill="x")
@@ -257,7 +257,7 @@ def issues(event=None):
     iss = ctk.CTk(className="IssuesAntimatter")
     iss.geometry("700x400")
     iss.title("Issues - Comical Antimatter 2026")
-    iss.iconbitmap(f"{BASE_DIR}/AppIcon.ico")
+    #iss.iconbitmap(f"{BASE_DIR}/AppIcon.ico")
     Iis = ctk.CTkTextbox(iss, width=500, height=400, state="disabled")
     Iis.pack(side="top", expand=True, fill="both")
     if isinstance(current_dir, dict):

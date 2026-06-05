@@ -8,7 +8,7 @@ from tklinenums import TkLineNumbers
 
 class AntimatterEditor(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
-        super().__init__(master, fg_color="#16161e", width=300, **kwargs)
+        super().__init__(master, fg_color="#19191a", width=300, **kwargs)
         
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -19,7 +19,7 @@ class AntimatterEditor(ctk.CTkFrame):
 
         # 1. THE TEXT CORE
         self.text = tk.Text(
-            self, bg="#16161e", fg="#D8DEE9", insertbackground="white",
+            self, bg="#19191a", fg="#D8DEE9", insertbackground="white",
             relief="flat", font=(self.font_family, self.font_size), undo=True,
             highlightthickness=0, borderwidth=0, wrap="none",
             padx=10, pady=10, inactiveselectbackground="#2e3c64", width=300
@@ -28,7 +28,7 @@ class AntimatterEditor(ctk.CTkFrame):
 
         # 2. THE GUTTER
         self.line_nums = TkLineNumbers(
-            self, self.text, width=45, bg="#16161e", 
+            self, self.text, width=45, bg="#19191a", 
             borderwidth=0, highlightthickness=0, justify="center"
         )
         self.line_nums.grid(row=0, column=0, sticky="ns")
@@ -51,7 +51,6 @@ class AntimatterEditor(ctk.CTkFrame):
         self.highlighter_queue = queue.Queue()
         self._highlight_job = None
         
-        # Start systems
         self.after(1, self._init_logic)
 
     def _init_logic(self):
@@ -68,7 +67,6 @@ class AntimatterEditor(ctk.CTkFrame):
         self.trigger_highlight()
 
     def _handle_zoom(self, event):
-        """Adjust font size when Ctrl is held and scroll wheel is used."""
         if event.num == 4 or event.delta > 0:
             self.font_size += 1
         elif event.num == 5 or event.delta < 0:
@@ -78,7 +76,6 @@ class AntimatterEditor(ctk.CTkFrame):
         return "break" 
 
     def _setup_theme(self):
-        """High-contrast theme mapping for Pygments tokens."""
         self.theme_map = {
             "Token.Keyword": "#c678dd", 
             "Token.Name.Function": "#61afef",
@@ -121,10 +118,9 @@ class AntimatterEditor(ctk.CTkFrame):
         self.context_menu.post(event.x_root, event.y_root)
 
     def trigger_highlight(self):
-        """Debounce highlighting to 20ms for snappiness."""
         if self._highlight_job:
             self.after_cancel(self._highlight_job)
-        self._highlight_job = self.after(20, self._request_highlight)
+        self._highlight_job = self.after(10, self._request_highlight)
 
     def _request_highlight(self):
         try:
