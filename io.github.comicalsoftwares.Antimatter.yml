@@ -1,0 +1,130 @@
+id: io.github.comicalsoftwares.Antimatter
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: antimatter
+finish-args:
+  - --socket=x11
+  - --socket=wayland
+  - --share=ipc
+  - --filesystem=host
+
+modules:
+  - name: tkinter
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=${FLATPAK_DEST} .
+    sources:
+      - type: git
+        url: https://github.com/iwalton3/tkinter-standalone.git
+        commit: ba946536054f9d27a08aafde21aa18330ce05729
+    modules:
+      - name: tcl
+        buildsystem: autotools
+        subdir: unix
+        post-install:
+          - chmod 755 /app/lib/libtcl*.so
+        sources:
+          - type: archive
+            url: https://prdownloads.sourceforge.net/tcl/tcl8.6.13-src.tar.gz
+            sha256: 43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066
+      - name: tk
+        buildsystem: autotools
+        subdir: unix
+        post-install:
+          - chmod 755 /app/lib/libtk*.so
+        sources:
+          - type: archive
+            url: https://prdownloads.sourceforge.net/tcl/tk8.6.13-src.tar.gz
+            sha256: 2e65fa069a23365440a3c56c556b8673b5e32a283800d8d9b257e3f584ce0675
+  - name: python3-packaging
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "packaging" --no-build-isolation
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/df/b2/87e62e8c3e2f4b32e5fe99e0b86d576da1312593b39f47d8ceef365e95ed/packaging-26.2-py3-none-any.whl
+        sha256: 5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e
+  - name: python3-customtkinter
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "customtkinter" --no-build-isolation
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/3b/b1/b43b33001a77256b335511e75f257d001082350b8506c8807f30c98db052/customtkinter-5.2.2-py3-none-any.whl
+        sha256: 14ad3e7cd3cb3b9eb642b9d4e8711ae80d3f79fb82545ad11258eeffb2e6b37c
+      - type: file
+        url: https://files.pythonhosted.org/packages/f2/f2/728f041460f1b9739b85ee23b45fa5a505962ea11fd85bdbe2a02b021373/darkdetect-0.8.0-py3-none-any.whl
+        sha256: a7509ccf517eaad92b31c214f593dbcf138ea8a43b2935406bbd565e15527a85
+
+  - name: python3-pygments
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "pygments" --no-build-isolation
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl
+        sha256: 81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176
+
+  - name: python3-tklinenums
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "tklinenums" --no-build-isolation
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/6c/4c/6eeff6222545ceafcc827b8aa480d86e55c93472ed13ab6f1e425aa168e0/tklinenums-1.7.1-py3-none-any.whl
+        sha256: 66e45df7eac4630055a23ea34d13f36ab53191f5e03e03eb564ffd94e7298867
+
+  - name: python3-pypresence
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "pypresence" --no-build-isolation
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/bd/0d/1c817c6769ce0b64cc0dcc20bc9d0edb4dc560e83a3b5f0d5cbda04c3d35/pypresence-4.6.1-py3-none-any.whl
+        sha256: 33d4549fcdf4102f81935df4ba587bacb22193e0c50c541d1ab9329b21df33cd
+        
+  - name: python3-ctkmenubar
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "ctkmenubar" --no-build-isolation
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/d0/ae/68f78d4ef338531716274daa3e7bcb931086eda38814243446bbafd2a95e/ctkmenubar-0.9-py3-none-any.whl
+        sha256: 51a379d2ec01ecdeaa00aa47f069672271f126f087d2f460cb1fb5b11067b61f
+
+  - name: python3-Pillow
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "Pillow" --no-build-isolation *.whl
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/e9/bd/e51a61b1054f09437acfbc2ff9106c30d1eb76bc1453d428399946781253/pillow-12.2.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+        sha256: e74473c875d78b8e9d5da2a70f7099549f9eb37ded4e2f6a463e60125bccd176
+        
+  - name: antimatter
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/bin
+      - mkdir -p /app/share/antimatter
+      - mkdir -p /app/share/applications
+      - mkdir -p /app/share/icons/hicolor/512x512/apps
+
+      - cp main.py codeview.py task.py util.py *.png /app/share/antimatter/
+      - cp io.github.comicalsoftwares.Antimatter.desktop /app/share/applications/
+      - cp AppIcon_50.png /app/share/icons/hicolor/512x512/apps/io.github.comicalsoftwares.Antimatter.png
+
+      - echo '#!/bin/sh' > /app/bin/antimatter
+      - echo 'export PYTHONPATH=/app/lib/python3.11/site-packages:$PYTHONPATH' >> /app/bin/antimatter
+      - echo 'exec python3 /app/share/antimatter/main.py "$@"' >> /app/bin/antimatter
+      - chmod +x /app/bin/antimatter
+    sources:
+      - type: dir
+        path: .

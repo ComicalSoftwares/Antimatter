@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.4
+Type=Application
+Name=Antimatter
+Comment=A lightweight, minimal yet functional code editor for Python.
+Exec=antimatter
+Icon=io.github.comicalsoftwares.Antimatter
+Terminal=false
+Categories=Development;IDE;Python
+StartupWMClass=Comical
