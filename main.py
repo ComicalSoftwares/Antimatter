@@ -42,7 +42,7 @@ app = ctk.CTk(className='Comical')
 app.title("Comical Antimatter 2026")
 app.geometry("1050x650")
 app.configure(fg_color="#2d2d2e")
-#app.iconbitmap(f"{BASE_DIR}/AppIcon.ico") # Disable this line for Linux.
+app.iconbitmap(f"{BASE_DIR}/AppIcon.ico") # Disable this line on Linux
 
 # Import Icons for buttons
 #=========================
@@ -55,8 +55,8 @@ termI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/term.png"))
 codeI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/code.png"))
 issueI = ctk.CTkImage(light_image=Image.open(f"{BASE_DIR}/issue.png"))
 
-# Create Menubar & define it
-#=============================
+# Define Menubar
+#==================
 menu = CTkMenuBar.CTkMenuBar(app, border_width=0)
 menu.configure(fg_color="#2d2d2e")
 app.config(menu=menu)
@@ -106,8 +106,7 @@ def new_file():
         )
     except Exception:
         pass
-def open_file(event=None):
-    global path
+def open_file(event=None):	
     new = messagebox.askyesno("Open file", "Save changes made to this file before proceeding ?")
     if new:
         save_file()
@@ -133,6 +132,8 @@ def open_file(event=None):
         )
     except Exception:
         pass
+    codeview.start_lsp(path)
+    codeview.bind("<<Modified>>", app.title(f"{path} - Comical Antimatter 2026 [MODFIED, DON'T FORGET TO SAVE]"))
 def save_file_as(event=None):
     path2 = filedialog.asksaveasfilename(
             title="Save file As",
@@ -156,6 +157,7 @@ def save_file_as(event=None):
         return False
         current_dir["path"] = path2
         return True
+    codeview.start_lsp(path2)
 
 def save_file(event=None):
     if not current_dir["path"]:
@@ -163,6 +165,7 @@ def save_file(event=None):
     try:
         with open(current_dir["path"], "w", encoding="utf-8") as f:
             f.write(codeview.get("0.0", "end-1c"))
+        app.title(f"{current_dir} - Comical Antimatter 2026")
     except Exception as e:
         messagebox.showerror("Save Error", f"Could not save file:\n{e}")
         return False
@@ -257,7 +260,7 @@ def issues(event=None):
     iss = ctk.CTk(className="IssuesAntimatter")
     iss.geometry("700x400")
     iss.title("Issues - Comical Antimatter 2026")
-    #iss.iconbitmap(f"{BASE_DIR}/AppIcon.ico")
+    iss.iconbitmap(f"{BASE_DIR}/AppIcon.ico")
     Iis = ctk.CTkTextbox(iss, width=500, height=400, state="disabled")
     Iis.pack(side="top", expand=True, fill="both")
     if isinstance(current_dir, dict):
@@ -274,7 +277,7 @@ def issues(event=None):
         Iis.see("end")
         Iis.configure(state="disabled")
     iss.mainloop()
-    
+
 # Special Functions
 #===================
 term = ctk.CTkButton(menux, text="", command=terminal, fg_color="transparent", height=32, width=24, corner_radius=5, image=termI)
@@ -329,10 +332,10 @@ binds = [
     (['<Control-n>', '<Control-N>'], new_file),
     (['<F5>'], Drun),
     (['<Control-F5>'], Compile),
-    (['<Control-Shift-c>', '<Control-Shift-c>'], util.project),
     (['<Control-s>', '<Control-S>'], save_file),
     (['<Control-i>', '<Control-I>'], issues),
-    (['<Control-t>', '<Control-T>'], terminal)
+    (['<Control-t>', '<Control-T>'], terminal),
+    (['<Control-B>', '<Control-b>'], restore_codeview)
 ]
 for seqs, fn in binds:
     for s in seqs:

@@ -6,7 +6,7 @@ from tkinter import filedialog, messagebox
 import urllib.request
 import re
 
-CURRENT_VERSION = "1.3"
+CURRENT_VERSION = "1.4"
 
 def project():
     folder = filedialog.askdirectory(title="Choose project folder")
