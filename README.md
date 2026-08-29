@@ -9,9 +9,11 @@ Lightweight Python IDE written in Python, supports Discord Rich Presence and bui
 >This software is available only for Windows and Linux. It is also recommended to use Antimatter for **non-important projects** in case there is a **bug** as the app is still in its **early alpha developement** and to get more used to the code editor as there may be a bit of a **learning curve** for **unexperienced** developers.
 
 ## How it works ?
-Antimatter uses the cutomtkinter GUI library aswell as a custom codeviewer capable of highlighting code and loading large files in seconds !
+Antimatter uses the PyQT6 GUI library aswell as a custom codeviewer capable of highlighting code, loading large files, and edit them in seconds !
 
-It also uses pypresence to provide built-in rich presence and can compile your python projects too !
+It also uses the pypresence module to provide built-in rich presence and it can compile your python projects too using a build template !
+
+A build template is a `.txt` file containing the normal command you would use in a terminal for compiling, all you need to do is to tell Antimatter to use it.
 
 ## Screenshot
 <img width="1024" height="576" alt="image" src="https://github.com/user-attachments/assets/1bebbb9a-64c6-414c-b976-8d5436e74724" />
@@ -25,7 +27,7 @@ Here is a summary of all what Antimatter is capable of:
 - Incredibly stable, blazing fast, and light on CPU and memory usage.
 - Automates repetitive common tasks such as creating and activating .venv environments.
 - Built-in terminal, it is non-interactive which means it is only used for basic commands that don't require giving an input after running the command, this feature's main purpose is debugging and not interacting with CLI programs.
-- Can check for issues by using pyflakes. (Too lazy to explain whats a pyflakes) Tho you need to know that it will only tell you whats wrong with your code once you click on the warning icon on your sidebar.
+- Can check for issues by using pyflakes. (Too lazy to explain whats a pyflakes) Tho you need to know that it will only tell you whats wrong with your code once you click on the warning icon on your sidebar. This is to ensure that your coding session is gonna be without any disturbance.
 >[!IMPORTANT]
 >**Pyflakes** must be installed on your system or else the feature **will not work**.
 - File manager coming soon.
