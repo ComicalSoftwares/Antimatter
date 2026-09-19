@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 import codeview # My beloved codeviewer
 import task # Gotta need to debug
 import util # Whatever ts is
+from tkinter import messagebox
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -115,7 +116,7 @@ class AntimatterApp(QMainWindow):
             }
         """)
 
-        icon_path = str(BASE_DIR / "AppIcon.ico") # When exporting to linux, please comment these lines. Thank you !
+        icon_path = str(BASE_DIR / "AppIcon.png") # Modified to make sure it works on Windows AND Linux !
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -536,11 +537,16 @@ class AntimatterApp(QMainWindow):
         iss_win.setCentralWidget(txt)
 
         actual_path = self.get_current_path() or ""
-        Out = subprocess.run(f'pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
+        if platform.system() == "Windows":
+            Out = subprocess.run(f'%appdata%/Python/Python314/Scripts/pyflakes.exe "{actual_path}"', capture_output=True, text=True, shell=True)
+        else:
+            Out = subprocess.run(f'pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
 
         output_str = Out.stdout + Out.stderr
         if not output_str.strip():
             txt.setPlainText("Nothing wrong with this file. Nice work !")
+        elif output_str.strip() == ": No such file or directory":
+            txt.setPlainText("Save the file first before exploring issues.")
         else:
             txt.setPlainText(output_str)
 

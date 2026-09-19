@@ -6,7 +6,7 @@ import urllib.request
 import re
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
-CURRENT_VERSION = "1.5"
+CURRENT_VERSION = "1.6"
 
 def project():
     folder = QFileDialog.getExistingDirectory(None, "Choose project folder")
