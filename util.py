@@ -1,3 +1,5 @@
+# Antimatter's utilities module
+
 import json
 import webbrowser
 import platform

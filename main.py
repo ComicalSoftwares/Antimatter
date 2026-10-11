@@ -3,20 +3,19 @@ import os
 import platform
 import subprocess
 import time
+import shutil
 from pathlib import Path
-
-from PyQt6.QtCore import Qt, QSize, QThread, pyqtSignal # ts gonna be soooo fast and smooth
-from PyQt6.QtGui import QIcon, QPixmap, QAction, QKeySequence
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QDir, QUrl
+from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFileSystemModel, QDesktopServices
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QTabWidget, QToolBar, QLineEdit, QPlainTextEdit,
-    QFileDialog, QMessageBox, QPushButton
+    QApplication, QMainWindow, QWidget, QVBoxLayout,
+    QTabWidget, QLineEdit, QPlainTextEdit,
+    QFileDialog, QMessageBox, QPushButton, QTreeView,
+    QDockWidget, QMenu, QInputDialog
 )
-
 import codeview # My beloved codeviewer
-import task # Gotta need to debug
-import util # Whatever ts is
-from tkinter import messagebox
+import task # For debugging
+import util # Whatever this even is
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -31,24 +30,13 @@ def discord():
             RPC = Presence(client_id, pipe=pipe_num)
             RPC.connect()
             RPC.update(
-                details="Doing nothing.", # Gotta flex my laziness
+                details="Inside the editor",
                 start=time.time(),
                 large_image="image",
                 large_text="Antimatter",
             )
     except Exception as e:
         print(f"Discord RPC Error: {e}")
-
-def update_rpc(file_name="an unnamed file"):
-    if RPC:
-        try:
-            RPC.update(
-                details=f"Editing {file_name}", # Gotta flex my hardwork, lol
-                large_image="image",
-                large_text="Antimatter",
-            )
-        except Exception as e:
-            print(f"Discord RPC Error: {e}")
 
 class TerminalReaderThread(QThread):
     output_signal = pyqtSignal(str)
@@ -76,9 +64,39 @@ class AntimatterApp(QMainWindow):
         self.setObjectName("Comical")
         self.setWindowTitle("Comical Antimatter 2026")
         self.resize(1050, 650)
+        
+        self.copied_path = None
+        self.setDockNestingEnabled(True)
+
         self.setStyleSheet("""
             QMainWindow {
                 background-color: #363636;
+            }
+            QDockWidget {
+                color: #cdd6f4;
+                font-family: 'Consolas', 'Cantarell';
+                font-size: 12px;
+            }
+            QDockWidget::title {
+                background: #2a2a2e;
+                padding-left: 8px;
+                padding-top: 4px;
+                padding-bottom: 4px;
+                border-bottom: 1px solid #1e1e1e;
+            }
+            QTreeView {
+                background-color: #1e1e1e;
+                color: #cdd6f4;
+                border: none;
+                font-family: 'Consolas', 'Cantarell';
+                font-size: 12px;
+            }
+            QTreeView::item:hover {
+                background-color: #2a2a2e;
+            }
+            QTreeView::item:selected {
+                background-color: #313244;
+                color: #ffffff;
             }
             QScrollBar:vertical {
                 background: #19191a;
@@ -86,14 +104,12 @@ class AntimatterApp(QMainWindow):
                 margin: 0px;
                 border: none;
             }
-
             QScrollBar:horizontal {
                 background: #19191a;
                 height: 10px;
                 margin: 0px;
                 border: none;
             }
-            
             QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
                 background: #45475a;
                 border-radius: 4px;
@@ -101,7 +117,6 @@ class AntimatterApp(QMainWindow):
                 min-width: 20px;
                 border: none;
             }
-
             QScrollBar::handle:hover {
                 background: #585b70;
             }
@@ -116,7 +131,7 @@ class AntimatterApp(QMainWindow):
             }
         """)
 
-        icon_path = str(BASE_DIR / "AppIcon.png") # Modified to make sure it works on Windows AND Linux !
+        icon_path = str(BASE_DIR / "AppIcon.png")
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -124,42 +139,40 @@ class AntimatterApp(QMainWindow):
 
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
-        main_layout = QHBoxLayout(central_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        self.central_layout = QVBoxLayout(central_widget)
+        self.central_layout.setContentsMargins(0, 0, 0, 0)
+        self.central_layout.setSpacing(0)
 
-        # Sidebar for old shit you can use using shortcuts
-        self.sidebar = QToolBar("Sidebar")
-        self.sidebar.setMovable(False)
-        self.sidebar.setOrientation(Qt.Orientation.Vertical)
-        self.sidebar.setStyleSheet("""
-            QToolBar {
-                background-color: #363636;
-                border: none;
-                padding-top: 5px;
-                spacing: 6px;
-            }
-            QToolButton {
-                background: transparent;
-                border: none;
-                border-radius: 4px;
-                padding: 6px;
-            }
-            QToolButton:hover {
-                background-color: #5400ba;
-            }
-        """)
-        self.sidebar.setIconSize(QSize(20, 20))
-        main_layout.addWidget(self.sidebar)
+        # File System Viewer
+        self.file_model = QFileSystemModel()
+        root_path = QDir.currentPath()
+        self.file_model.setRootPath(root_path)
 
-        # Main Container
-        self.main_container = QWidget()
-        self.container_layout = QVBoxLayout(self.main_container)
-        self.container_layout.setContentsMargins(0, 0, 0, 0)
-        self.container_layout.setSpacing(0)
-        main_layout.addWidget(self.main_container)
+        self.tree = QTreeView()
+        self.tree.setModel(self.file_model)
+        self.tree.setRootIndex(self.file_model.index(root_path))
+        self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.tree.customContextMenuRequested.connect(self._show_tree_context_menu)
 
-        # Tab bar with close button
+        for col in range(1, 4):
+            self.tree.setColumnHidden(col, True)
+
+        self.tree.header().hide()
+        self.tree.doubleClicked.connect(self._on_tree_double_clicked)
+
+        # File Dock Sidebar
+        self.sidebar_dock = QDockWidget("File Manager", self)
+        self.sidebar_dock.setWidget(self.tree)
+        self.sidebar_dock.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetClosable | 
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+        )
+        self.sidebar_dock.setAllowedAreas(
+            Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
+        )
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.sidebar_dock)
+
+        # Tab bar
         self.tabs = QTabWidget()
         self.tabs.setTabsClosable(True)
         self.tabs.setMovable(True)
@@ -200,9 +213,9 @@ class AntimatterApp(QMainWindow):
                 border-radius: 7px;
             }
         """)
-        self.container_layout.addWidget(self.tabs)
+        self.central_layout.addWidget(self.tabs)
 
-        # Integrated Terminal Box
+        # Terminal
         self.terminal_container = QWidget()
         term_layout = QVBoxLayout(self.terminal_container)
         term_layout.setContentsMargins(5, 5, 5, 5)
@@ -213,23 +226,188 @@ class AntimatterApp(QMainWindow):
         term_layout.addWidget(self.output_box)
 
         self.term_entry = QLineEdit()
-        self.term_entry.setPlaceholderText("Type a command...")
+        self.term_entry.setPlaceholderText("Type a command here")
         self.term_entry.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: none; solid #313244; padding: 4px;")
         self.term_entry.returnPressed.connect(self._exec_terminal_cmd)
         term_layout.addWidget(self.term_entry)
 
         self.terminal_container.hide()
-        self.container_layout.addWidget(self.terminal_container)
+        self.central_layout.addWidget(self.terminal_container)
 
-        self._setup_sidebar_buttons()
+        self.sidebar_was_visible = True
+
         self._setup_menubar()
         self._setup_shortcuts()
-
-        # Start terminal
         self._init_interactive_terminal()
 
         self.create_new_tab()
         discord()
+
+    def _show_tree_context_menu(self, position):
+        index = self.tree.indexAt(position)
+        path = self.file_model.filePath(index) if index.isValid() else QDir.currentPath()
+        is_dir = self.file_model.isDir(index) if index.isValid() else True
+
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu { background-color: #181825; color: #cdd6f4; border: 1px solid #313244; }
+            QMenu::item:selected { background-color: #313244; }
+        """)
+
+        act_new_file = menu.addAction("New File")
+        act_new_folder = menu.addAction("New Folder")
+        menu.addSeparator()
+
+        act_copy = None
+        act_paste = None
+        act_duplicate = None
+        act_rename = None
+        act_delete = None
+
+        if index.isValid():
+            act_copy = menu.addAction("Copy")
+            act_duplicate = menu.addAction("Duplicate")
+
+        target_folder = path if is_dir else str(Path(path).parent)
+        if self.copied_path and os.path.exists(self.copied_path):
+            act_paste = menu.addAction("Paste")
+
+        if index.isValid():
+            menu.addSeparator()
+            act_rename = menu.addAction("Rename")
+            act_delete = menu.addAction("Delete")
+
+        menu.addSeparator()
+        act_reveal = menu.addAction("Show in File Manager")
+
+        action = menu.exec(self.tree.viewport().mapToGlobal(position))
+
+        if action == act_new_file:
+            self._tree_create_file(target_folder)
+        elif action == act_new_folder:
+            self._tree_create_folder(target_folder)
+        elif action == act_copy and path:
+            self.copied_path = path
+        elif action == act_paste:
+            self._tree_paste_item(target_folder)
+        elif action == act_duplicate and path:
+            self._tree_duplicate_item(path)
+        elif action == act_rename and path:
+            self._tree_rename_item(path)
+        elif action == act_delete and path:
+            self._tree_delete_item(path)
+        elif action == act_reveal:
+            self._tree_show_in_explorer(path or target_folder)
+
+    def _tree_create_file(self, parent_dir):
+        name, ok = QInputDialog.getText(self, "New File", "Give your new file a name (don't forget the extension):")
+        if ok and name.strip():
+            target = os.path.join(parent_dir, name.strip())
+            try:
+                open(target, "w", encoding="utf-8")
+            except Exception as e:
+                QMessageBox.critical(self, "Something went really wrong", f"Couldn't create file for the following reason:\n{e}")
+
+    def _tree_create_folder(self, parent_dir):
+        name, ok = QInputDialog.getText(self, "New Folder", "Give your new folder a name:")
+        if ok and name.strip():
+            target = os.path.join(parent_dir, name.strip())
+            try:
+                os.makedirs(target, exist_ok=True)
+            except Exception as e:
+                QMessageBox.critical(self, "uh oh", f"Can't create folder for this exact reason:\n{e}")
+
+    def _tree_paste_item(self, target_folder):
+        if not self.copied_path or not os.path.exists(self.copied_path):
+            return
+        src = Path(self.copied_path)
+        dest = Path(target_folder) / src.name
+        
+        counter = 1
+        while dest.exists():
+            dest = Path(target_folder) / f"{src.stem}_copy{counter}{src.suffix}"
+            counter += 1
+
+        try:
+            if src.is_dir():
+                shutil.copytree(src, dest)
+            else:
+                shutil.copy2(src, dest)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to paste:\n{e}")
+
+    def _tree_duplicate_item(self, path):
+        src = Path(path)
+        parent = src.parent
+        dest = parent / f"{src.stem}_copy{src.suffix}"
+        
+        counter = 1
+        while dest.exists():
+            dest = parent / f"{src.stem}_copy{counter}{src.suffix}"
+            counter += 1
+
+        try:
+            if src.is_dir():
+                shutil.copytree(src, dest)
+            else:
+                shutil.copy2(src, dest)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to duplicate:\n{e}")
+
+    def _tree_rename_item(self, old_path):
+        p = Path(old_path)
+        new_name, ok = QInputDialog.getText(self, "Rename", "New Name:", text=p.name)
+        if ok and new_name.strip() and new_name.strip() != p.name:
+            new_path = p.parent / new_name.strip()
+            try:
+                os.rename(old_path, new_path)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to rename:\n{e}")
+
+    def _tree_delete_item(self, path):
+        reply = QMessageBox.question(
+            self, "Confirm Delete", f"Are you sure you want to delete:\n{path}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to delete:\n{e}")
+
+    def _tree_show_in_explorer(self, path):
+        if platform.system() == "Windows":
+            subprocess.run(["explorer", "/select,", os.path.normpath(path)])
+        else:
+            if os.path.isfile(path):
+                parent_dir = os.path.dirname(path)
+            else:
+                parent_dir = path
+            QDesktopServices.openUrl(QUrl.fromLocalFile(parent_dir))
+
+    def _on_tree_double_clicked(self, index):
+        file_path = self.file_model.filePath(index)
+        if not self.file_model.isDir(index):
+            self.open_file_by_path(file_path)
+
+    def open_file_by_path(self, path):
+        for widget, data in self.tabs_data.items():
+            if data.get("path") == path:
+                self.tabs.setCurrentWidget(widget)
+                return
+
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as e:
+            QMessageBox.critical(self, "Open Error", f"Could not open file:\n{e}")
+            return
+
+        filename = Path(path).name
+        self.create_new_tab(title=filename, content=content, file_path=path)
 
     def _init_interactive_terminal(self):
         shell_cmd = "cmd.exe" if platform.system() == "Windows" else "/bin/bash"
@@ -252,25 +430,6 @@ class AntimatterApp(QMainWindow):
         self.output_box.moveCursor(self.output_box.textCursor().MoveOperation.End)
         self.output_box.insertPlainText(text)
 
-    def _setup_sidebar_buttons(self):
-        def add_btn(icon_filename, func, tooltip=""):
-            pixmap = QPixmap(str(BASE_DIR / icon_filename))
-            icon = QIcon(pixmap)
-            act = QAction(icon, "", self)
-            act.setToolTip(tooltip)
-            act.triggered.connect(func)
-            self.sidebar.addAction(act)
-            return act
-
-        add_btn("undo.png", self.do_undo, "Undo")
-        add_btn("redo.png", self.do_redo, "Redo")
-        add_btn("copy.png", lambda: self.get_current_editor().text.copy() if self.get_current_editor() else None, "Copy")
-        add_btn("paste.png", lambda: self.get_current_editor().text.paste() if self.get_current_editor() else None, "Paste")
-        add_btn("cut.png", lambda: self.get_current_editor().text.cut() if self.get_current_editor() else None, "Cut")
-        
-        self.term_act = add_btn("term.png", self.toggle_terminal, "Terminal")
-        add_btn("issue.png", self.issues, "Issues")
-
     def _setup_menubar(self):
         menubar = self.menuBar()
         menubar.setStyleSheet("""
@@ -287,11 +446,15 @@ class AntimatterApp(QMainWindow):
         file_menu.addAction("Save As", self.save_file_as)
         file_menu.addAction("Close current Tab", self.close_current_tab)
 
+        view_menu = menubar.addMenu("View")
+        view_menu.addAction(self.sidebar_dock.toggleViewAction())
+        view_menu.addAction("Toggle Terminal/Code view", self.toggle_terminal)
+
         task_menu = menubar.addMenu("Task")
         task_menu.addAction("Run", self.Drun)
         task_menu.addAction("Run without debugger (Only for GUI apps)", task.run)
         task_menu.addAction("Build project", task.compile)
-        task_menu.addAction("Open new terminal window", task.Terminal)
+        task_menu.addAction("Find issues", self.issues)
 
         tools_menu = menubar.addMenu("Tools")
         tools_menu.addAction("Configure Project", util.project)
@@ -310,13 +473,19 @@ class AntimatterApp(QMainWindow):
             ("Ctrl+F5", task.compile),
             ("Ctrl+I", self.issues),
             ("Ctrl+T", self.toggle_terminal),
-            ("Ctrl+B", self.restore_codeview),
+            ("Ctrl+B", self.toggle_sidebar),
         ]
         for seq, fn in binds:
             action = QAction(self)
             action.setShortcut(QKeySequence(seq))
             action.triggered.connect(fn)
             self.addAction(action)
+
+    def toggle_sidebar(self):
+        if self.sidebar_dock.isVisible():
+            self.sidebar_dock.hide()
+        else:
+            self.sidebar_dock.show()
 
     def get_current_editor(self):
         widget = self.tabs.currentWidget()
@@ -337,7 +506,6 @@ class AntimatterApp(QMainWindow):
 
         index = self.tabs.addTab(editor, title)
         
-        # Close tab
         close_btn = QPushButton("×")
         close_btn.setFixedSize(20, 20)
         close_btn.setStyleSheet("""
@@ -390,14 +558,11 @@ class AntimatterApp(QMainWindow):
         if not editor:
             return
         path = self.tabs_data[editor]["path"]
-        title_name = self.tabs_data[editor]["title"]
 
         if path:
             self.setWindowTitle(f"{path} - Comical Antimatter 2026")
         else:
             self.setWindowTitle("Comical Antimatter 2026")
-
-        update_rpc(file_name=Path(path).name if path else title_name)
 
     def close_tab_by_widget(self, widget):
         idx = self.tabs.indexOf(widget)
@@ -438,15 +603,7 @@ class AntimatterApp(QMainWindow):
         )
         if not path:
             return
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                content = f.read()
-        except Exception as e:
-            QMessageBox.critical(self, "Open Error", f"Could not open file:\n{e}")
-            return
-
-        filename = Path(path).name
-        self.create_new_tab(title=filename, content=content, file_path=path)
+        self.open_file_by_path(path)
 
     def save_file_as(self):
         editor = self.get_current_editor()
@@ -469,7 +626,6 @@ class AntimatterApp(QMainWindow):
             self.tabs_data[editor]["title"] = filename
             self.mark_tab_saved(editor)
             self.setWindowTitle(f"{path2} - Comical Antimatter 2026")
-            update_rpc(filename)
             if hasattr(editor, "start_lsp"):
                 editor.start_lsp(path2)
             return True
@@ -498,6 +654,7 @@ class AntimatterApp(QMainWindow):
         if self.terminal_container.isVisible():
             self.restore_codeview()
         else:
+            self.sidebar_was_visible = self.sidebar_dock.isVisible()
             self.tabs.hide()
             self.terminal_container.show()
             self.term_entry.setFocus()
@@ -558,10 +715,13 @@ class AntimatterApp(QMainWindow):
         if hasattr(self, "term_process"):
             self.term_process.terminate()
         super().closeEvent(event)
+    def show_files(self):
+        self.sidebar_dock.toggleViewAction()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setDesktopFileName("com.comicalsoftwares.antimatter")
     window = AntimatterApp()
     window.show()
     sys.exit(app.exec())

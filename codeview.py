@@ -1,17 +1,12 @@
-import sys
 import asyncio
+import os
 import threading
 from pygments.lexers import PythonLexer
 from pygments import lex
-
 from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QObject
-from PyQt6.QtGui import QColor, QFont, QPainter, QTextFormat, QSyntaxHighlighter, QTextCharFormat, QTextCursor
-from PyQt6.QtWidgets import (
-    QWidget, QPlainTextEdit, QListWidget, QMenu, QHBoxLayout, QFrame
-)
-
+from PyQt6.QtGui import QColor, QFont, QPainter, QSyntaxHighlighter, QTextCharFormat, QTextCursor
+from PyQt6.QtWidgets import (QWidget, QPlainTextEdit, QListWidget, QMenu, QHBoxLayout, QFrame)
 from lsp import LspClient
-
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -23,7 +18,6 @@ class LineNumberArea(QWidget):
 
     def paintEvent(self, event):
         self.codeEditor.lineNumberAreaPaintEvent(event)
-
 
 class PythonHighlighter(QSyntaxHighlighter):
     def __init__(self, document):
@@ -62,7 +56,6 @@ class PythonHighlighter(QSyntaxHighlighter):
                     self.setFormat(idx, length, self.formats[matched_tag])
                     start = idx + length
 
-
 class AntimatterTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -88,7 +81,6 @@ class AntimatterTextEdit(QPlainTextEdit):
         self.horizontalScrollBar().setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, False)
 
     def keyPressEvent(self, event):
-        # 1. Handle Tab: insert spaces up to the next 4-space tab stop
         if event.key() == Qt.Key.Key_Tab:
             cursor = self.textCursor()
             col = cursor.columnNumber()
@@ -96,14 +88,11 @@ class AntimatterTextEdit(QPlainTextEdit):
             cursor.insertText(" " * spaces_to_insert)
             return
 
-        # 2. Handle Backspace: delete up to 4 leading spaces for indentation
         if event.key() == Qt.Key.Key_Backspace:
             cursor = self.textCursor()
             if not cursor.hasSelection():
                 block_text = cursor.block().text()
                 col = cursor.columnNumber()
-                
-                # Check if everything before the cursor on this line is whitespace
                 prefix = block_text[:col]
                 if prefix and prefix.isspace():
                     spaces_to_delete = col % 4 or 4
@@ -140,7 +129,6 @@ class AntimatterTextEdit(QPlainTextEdit):
 
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.line_number_area)
-        # Match line background directly with text edit bg
         painter.fillRect(event.rect(), QColor("#19191a"))
 
         block = self.firstVisibleBlock()
@@ -173,10 +161,8 @@ class AntimatterTextEdit(QPlainTextEdit):
         else:
             super().wheelEvent(event)
 
-
 class LspSignals(QObject):
     completions_ready = pyqtSignal(list)
-
 
 class AntimatterEditor(QFrame):
     def __init__(self, parent=None):
@@ -192,7 +178,6 @@ class AntimatterEditor(QFrame):
 
         self.highlighter = PythonHighlighter(self.text.document())
 
-        # LSP Setup
         self.lsp = LspClient()
         self.loop = asyncio.new_event_loop()
         self.lsp_signals = LspSignals()
@@ -206,55 +191,87 @@ class AntimatterEditor(QFrame):
         
         self.text.installEventFilter(self)
         self.comp_popup = None
+        self._current_completions = []
+        self._current_file_path = None
 
     def eventFilter(self, obj, event):
         if obj == self.text and event.type() == event.Type.KeyPress:
             if event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_Space:
                 self.show_completions()
                 return True
+
+            if self.comp_popup and self.comp_popup.isVisible():
+                if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Tab):
+                    current_item = self.comp_popup.currentItem()
+                    if current_item:
+                        self._apply_completion(current_item.text().strip())
+                    return True
+                elif event.key() == Qt.Key.Key_Escape:
+                    self.comp_popup.close()
+                    return True
+                elif event.key() == Qt.Key.Key_Down:
+                    self.comp_popup.setCurrentRow(min(self.comp_popup.count() - 1, self.comp_popup.currentRow() + 1))
+                    return True
+                elif event.key() == Qt.Key.Key_Up:
+                    self.comp_popup.setCurrentRow(max(0, self.comp_popup.currentRow() - 1))
+                    return True
+
         return super().eventFilter(obj, event)
 
     def _run_async_loop(self):
         asyncio.set_event_loop(self.loop)
         self.loop.run_forever()
 
-    def start_lsp(self, file_path):
-        root_path = "/"
-        future = asyncio.run_coroutine_threadsafe(
-            self.lsp.start("python", root_path), self.loop
-        )
-        def on_started(f):
-            if f.result():
-                self.lsp.did_open(file_path, self.text.toPlainText())
-        future.add_done_callback(on_started)
+    def start_lsp(self, file_path=None):
+        if not file_path:
+            file_path = os.path.join(os.getcwd(), "untitled.py")
+            
+        self._current_file_path = file_path
+        root_path = os.path.dirname(os.path.abspath(file_path))
+
+        async def init_sequence():
+            started = await self.lsp.start("python", root_path)
+            if started:
+                await self.lsp.did_open(self._current_file_path, self.text.toPlainText())
+
+        asyncio.run_coroutine_threadsafe(init_sequence(), self.loop)
 
     def _on_text_changed(self):
+        if not self.lsp.running:
+            return
         content = self.text.toPlainText()
-        self.lsp.did_change(content)
+        asyncio.run_coroutine_threadsafe(self.lsp.did_change(content), self.loop)
 
     def show_completions(self):
+        if not self.lsp.running:
+            return
+
         cursor = self.text.textCursor()
         line = cursor.blockNumber()
         col = cursor.columnNumber()
 
-        future = asyncio.run_coroutine_threadsafe(
-            self.lsp.complete(line, col), self.loop
-        )
-        def process_results(f):
-            try:
-                completions = f.result()
-                if completions:
-                    self.lsp_signals.completions_ready.emit(completions)
-            except Exception:
-                pass
-        future.add_done_callback(process_results)
+        async def get_comp():
+            completions = await self.lsp.complete(line, col)
+            if completions:
+                self.lsp_signals.completions_ready.emit(completions)
+
+        asyncio.run_coroutine_threadsafe(get_comp(), self.loop)
 
     def _display_popup(self, completions):
         if self.comp_popup:
             self.comp_popup.close()
 
-        self.comp_popup = QListWidget()
-        self.comp_popup.setWindowFlags(Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint)
+        self._current_completions = completions
+
+        # Attach parent widget directly to support Wayland subsurfaces
+        self.comp_popup = QListWidget(self.text)
+        self.comp_popup.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+        
+        # Explicitly declare transient parent window for Hyprland
+        if self.text.window().windowHandle():
+            self.comp_popup.create()
+            self.comp_popup.windowHandle().setTransientParent(self.text.window().windowHandle())
+
         self.comp_popup.setStyleSheet("""
             QListWidget {
                 background-color: #181825;
@@ -270,18 +287,27 @@ class AntimatterEditor(QFrame):
         for item in completions:
             self.comp_popup.addItem(f" {item['label']} ")
 
+        if completions:
+            self.comp_popup.setCurrentRow(0)
+
         cursor_rect = self.text.cursorRect()
         global_pos = self.text.mapToGlobal(cursor_rect.bottomLeft())
         self.comp_popup.move(global_pos)
         
-        def finalize(item):
-            selection = item.text().strip()
-            insert_text = next((c["insert"] for c in completions if c["label"] == selection), selection)
-            self.text.insertPlainText(insert_text)
-            self.comp_popup.close()
-
-        self.comp_popup.itemClicked.connect(finalize)
+        self.comp_popup.itemClicked.connect(lambda item: self._apply_completion(item.text().strip()))
         self.comp_popup.show()
+
+    def _apply_completion(self, label):
+        insert_text = next(
+            (c["insert"] for c in self._current_completions if c["label"] == label), label
+        )
+
+        cursor = self.text.textCursor()
+        cursor.select(QTextCursor.SelectionType.WordUnderCursor)
+        cursor.insertText(insert_text)
+
+        if self.comp_popup:
+            self.comp_popup.close()
 
     def _show_context_menu(self, pos):
         menu = QMenu(self)
