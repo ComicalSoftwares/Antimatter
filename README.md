@@ -1,12 +1,5 @@
-<div align=center>
-<img width="500" height="508" alt="AppIcon" src="https://github.com/user-attachments/assets/b3a18041-0a8a-4159-b987-93705d7aa247" />
-</div>
-<div align=center>
-  
 # Antimatter
 A modern, lightweight and absurdly optimized Python IDE built using Python and PyQT6
-
-</div>
 
 > [!WARNING]
 > Antimatter's current developement status is in **early alpha**. We do not recommend you to uninstall your current IDE yet. If you really want to switch then at least wait for it to pass to **Beta stage**.. (which will indeed take a while).
@@ -50,11 +43,7 @@ These components are:
 >[!Note]
 > These screenshots are not definitive and will indeed change as the IDE grows.
 
-<img width="1920" height="1080" alt="Screenshot From 2026-10-11 15-15-23" src="https://github.com/user-attachments/assets/fee99707-a77a-4570-9a3e-35c4aa19763f" />
-<img width="1920" height="1080" alt="Screenshot From 2026-10-11 12-52-13" src="https://github.com/user-attachments/assets/54f4b511-4291-4d75-a27a-164768bb5f00" />
-
-
-[Watch demo](https://github.com/user-attachments/assets/21dd7320-403e-45e7-bf78-c4853ef1ec1f)
+(To add when uploading to github)
 
 ## Features roadmap
 Antimatter is an evolving IDE that grows with time to satisfy mutliple needs !
