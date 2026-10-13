@@ -1,5 +1,10 @@
+<div align=center>
+
+<img width="241" height="241" alt="AppIcon" src="https://github.com/user-attachments/assets/aecbdeb4-5fc7-4f77-b4b1-908c5e0626d0" />
+
 # Antimatter
-A modern, lightweight and absurdly optimized Python IDE built using Python and PyQT6
+A modern, lightweight and absurdly optimized Python IDE written in **Python and PyQT6**
+</div>
 
 > [!WARNING]
 > Antimatter's current developement status is in **early alpha**. We do not recommend you to uninstall your current IDE yet. If you really want to switch then at least wait for it to pass to **Beta stage**.. (which will indeed take a while).
@@ -16,7 +21,7 @@ A modern, lightweight and absurdly optimized Python IDE built using Python and P
 - Simple to understand wiki and documentation.
 
 ## Download today !
-Antimatter is free & opensource ! _(No sh*t sherlock !)_
+Antimatter is free & opensource ! _(Obviously !)_
 
 ### Latest release: Version 1.5 - Alpha
 - **Windows installer**: [antimatter_setup.exe](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.5/antimatter_setup.exe)
@@ -43,12 +48,17 @@ These components are:
 >[!Note]
 > These screenshots are not definitive and will indeed change as the IDE grows.
 
-(To add when uploading to github)
+<img width="1920" height="1080" alt="Screenshot From 2026-10-10 15-04-57" src="https://github.com/user-attachments/assets/459266d2-c7c0-4cbb-85a4-46940d4834b2" />
+<img width="1920" height="1080" alt="Screenshot From 2026-10-11 12-52-13" src="https://github.com/user-attachments/assets/821a88e0-62b6-469e-b66f-f5d7005e8798" />
+
+https://github.com/user-attachments/assets/9cc0926d-c950-440e-9c72-0af109c88957
+
+
 
 ## Features roadmap
-Antimatter is an evolving IDE that grows with time to satisfy mutliple needs !
+Antimatter is an evolving IDE that targets to satisfy multiple needs !
 
-And to make it satisfy these multiple needs, then we need to add all necessary features and make them as stable and as reliable as possible.
+And to make it satisfy these needs, then we'll have to add all of these necessary features and make them as stable and as reliable as possible.
 
 ### Main programming experience:
 - [X] Code syntax highlighting.
