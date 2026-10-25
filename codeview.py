@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QObject
 from PyQt6.QtGui import QColor, QFont, QPainter, QSyntaxHighlighter, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import (QWidget, QPlainTextEdit, QListWidget, QMenu, QHBoxLayout, QFrame)
 from lsp import LspClient
+import git
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -263,11 +264,9 @@ class AntimatterEditor(QFrame):
 
         self._current_completions = completions
 
-        # Attach parent widget directly to support Wayland subsurfaces
         self.comp_popup = QListWidget(self.text)
         self.comp_popup.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         
-        # Explicitly declare transient parent window for Hyprland
         if self.text.window().windowHandle():
             self.comp_popup.create()
             self.comp_popup.windowHandle().setTransientParent(self.text.window().windowHandle())
@@ -322,21 +321,39 @@ class AntimatterEditor(QFrame):
                 color: white;
             }
         """)
-        
-        cut_act = menu.addAction("Cut")
-        cut_act.triggered.connect(self.text.cut)
+
         copy_act = menu.addAction("Copy")
         copy_act.triggered.connect(self.text.copy)
+        cut_act = menu.addAction("Cut")
+        cut_act.triggered.connect(self.text.cut)
         paste_act = menu.addAction("Paste")
         paste_act.triggered.connect(self.text.paste)
         menu.addSeparator()
-        comp_act = menu.addAction("Show completions")
-        comp_act.triggered.connect(self.show_completions)
+        comp_act = menu.addAction("Show Completions")
+        comp_act.triggered.connect(lambda: self.show_completions)
+        menu.addSeparator()
+        
+        # Git Actions
+        diff_act = menu.addAction("View Git Diff")
+        diff_act.triggered.connect(lambda: git.show_file_diff(self._current_file_path))
+        blame_act = menu.addAction("View Git Blame")
+        blame_act.triggered.connect(lambda: git.show_file_blame(self._current_file_path))
+        status_act = menu.addAction("View Uncommitted Files")
+        status_act.triggered.connect(self._show_git_status)
+        
         menu.addSeparator()
         select_act = menu.addAction("Select All")
         select_act.triggered.connect(self.text.selectAll)
 
         menu.exec(self.text.mapToGlobal(pos))
+
+    def _show_git_status(self):
+        if not self._current_file_path:
+            return
+        root_dir = os.path.dirname(os.path.abspath(self._current_file_path))
+        status_output = git.get_status(root_dir)
+        self._show_text_dialog("Uncommitted Files (Git Status)", status_output)
+
 
     def get(self, start="0.0", end="end-1c"):
         return self.text.toPlainText()

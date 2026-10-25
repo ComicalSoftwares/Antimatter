@@ -5,17 +5,20 @@ import subprocess
 import time
 import shutil
 from pathlib import Path
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QDir, QUrl
-from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFileSystemModel, QDesktopServices
+from PyQt6.QtCore import Qt, QDir, QUrl
+from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFileSystemModel, QDesktopServices, QPixmap, QColor
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout,
-    QTabWidget, QLineEdit, QPlainTextEdit,
+    QTabWidget, QPlainTextEdit,
     QFileDialog, QMessageBox, QPushButton, QTreeView,
-    QDockWidget, QMenu, QInputDialog
+    QDockWidget, QMenu, QInputDialog, QStackedWidget,
+    QGraphicsColorizeEffect, QLabel
 )
 import codeview # My beloved codeviewer
 import task # For debugging
 import util # Whatever this even is
+import terminal # sudo rm -rf /* --yes-preserve-root
+import git
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -37,26 +40,6 @@ def discord():
             )
     except Exception as e:
         print(f"Discord RPC Error: {e}")
-
-class TerminalReaderThread(QThread):
-    output_signal = pyqtSignal(str)
-
-    def __init__(self, process):
-        super().__init__()
-        self.process = process
-        self.running = True
-
-    def run(self):
-        while self.running and self.process.poll() is None:
-            char = self.process.stdout.read(1)
-            if char:
-                self.output_signal.emit(char)
-            else:
-                time.sleep(0.01)
-
-    def stop(self):
-        self.running = False
-
 
 class AntimatterApp(QMainWindow):
     def __init__(self):
@@ -143,9 +126,57 @@ class AntimatterApp(QMainWindow):
         self.central_layout.setContentsMargins(0, 0, 0, 0)
         self.central_layout.setSpacing(0)
 
+        # Stacked Widget to toggle between Welcome Screen and Editor Tabs
+        self.stack = QStackedWidget()
+        self.central_layout.addWidget(self.stack)
+
+        # Welcome Screen Widget
+        self.welcome_widget = QWidget()
+        self.welcome_widget.setStyleSheet("background-color: #363636;")
+        welcome_layout = QVBoxLayout(self.welcome_widget)
+        welcome_layout.setContentsMargins(0, 0, 0, 20)
+
+        logo_label = QLabel()
+        if os.path.exists(icon_path):
+            pixmap = QPixmap(icon_path).scaled(130, 130, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(pixmap)
+            effect = QGraphicsColorizeEffect(logo_label)
+            effect.setColor(QColor("#363636"))
+            effect.setStrength(0)
+            logo_label.setGraphicsEffect(effect)
+        logo_label.setStyleSheet("background: transparent;")
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        title_label = QLabel("Welcome to Antimatter")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("color: white; font-family: 'Consolas', 'Cantarell'; font-size: 30px; font-weight: bold; background: transparent;")
+
+        center_container = QWidget()
+        center_container.setStyleSheet("background: transparent;")
+        center_layout = QVBoxLayout(center_container)
+        center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        center_layout.setSpacing(12)
+        center_layout.addWidget(logo_label)
+        center_layout.addWidget(title_label)
+
+        welcome_layout.addStretch()
+        welcome_layout.addWidget(center_container)
+        welcome_layout.addStretch()
+
+        footer_label = QLabel("Version 1.7 - Alpha")
+        footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer_label.setStyleSheet("color: #8a79a3; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
+        footer_label2 = QLabel("This project is open-source and licensed under the MIT license.")
+        footer_label2.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer_label2.setStyleSheet("color: white; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
+        welcome_layout.addWidget(footer_label)
+        welcome_layout.addWidget(footer_label2)
+
+        self.stack.addWidget(self.welcome_widget)
+
         # File System Viewer
         self.file_model = QFileSystemModel()
-        root_path = QDir.currentPath()
+        root_path = str(Path.home())
         self.file_model.setRootPath(root_path)
 
         self.tree = QTreeView()
@@ -213,23 +244,15 @@ class AntimatterApp(QMainWindow):
                 border-radius: 7px;
             }
         """)
-        self.central_layout.addWidget(self.tabs)
+        self.stack.addWidget(self.tabs)
 
-        # Terminal
+        # Live Terminal Widget Integration
         self.terminal_container = QWidget()
         term_layout = QVBoxLayout(self.terminal_container)
         term_layout.setContentsMargins(5, 5, 5, 5)
         
-        self.output_box = QPlainTextEdit()
-        self.output_box.setReadOnly(True)
-        self.output_box.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: none; font-family: Consolas;")
-        term_layout.addWidget(self.output_box)
-
-        self.term_entry = QLineEdit()
-        self.term_entry.setPlaceholderText("Type a command here")
-        self.term_entry.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: none; solid #313244; padding: 4px;")
-        self.term_entry.returnPressed.connect(self._exec_terminal_cmd)
-        term_layout.addWidget(self.term_entry)
+        self.terminal_widget = terminal.AntimatterTerminal(self)
+        term_layout.addWidget(self.terminal_widget)
 
         self.terminal_container.hide()
         self.central_layout.addWidget(self.terminal_container)
@@ -238,9 +261,7 @@ class AntimatterApp(QMainWindow):
 
         self._setup_menubar()
         self._setup_shortcuts()
-        self._init_interactive_terminal()
 
-        self.create_new_tab()
         discord()
 
     def _show_tree_context_menu(self, position):
@@ -397,6 +418,7 @@ class AntimatterApp(QMainWindow):
         for widget, data in self.tabs_data.items():
             if data.get("path") == path:
                 self.tabs.setCurrentWidget(widget)
+                self.stack.setCurrentIndex(1)
                 return
 
         try:
@@ -409,26 +431,11 @@ class AntimatterApp(QMainWindow):
         filename = Path(path).name
         self.create_new_tab(title=filename, content=content, file_path=path)
 
-    def _init_interactive_terminal(self):
-        shell_cmd = "cmd.exe" if platform.system() == "Windows" else "/bin/bash"
-        try:
-            self.term_process = subprocess.Popen(
-                shell_cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1
-            )
-            self.term_reader = TerminalReaderThread(self.term_process)
-            self.term_reader.output_signal.connect(self._append_term_output)
-            self.term_reader.start()
-        except Exception as e:
-            self.output_box.appendPlainText(f"Failed to launch shell: {e}\n")
-
-    def _append_term_output(self, text):
-        self.output_box.moveCursor(self.output_box.textCursor().MoveOperation.End)
-        self.output_box.insertPlainText(text)
+    def open_project_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Open Project Folder", QDir.homePath())
+        if folder:
+            self.file_model.setRootPath(folder)
+            self.tree.setRootIndex(self.file_model.index(folder))
 
     def _setup_menubar(self):
         menubar = self.menuBar()
@@ -442,8 +449,10 @@ class AntimatterApp(QMainWindow):
         file_menu = menubar.addMenu("File")
         file_menu.addAction("New File", self.new_file)
         file_menu.addAction("Open File", self.open_file)
+        file_menu.addAction("Open Folder...", self.open_project_folder)
         file_menu.addAction("Save", self.save_file)
         file_menu.addAction("Save As", self.save_file_as)
+        file_menu.addSeparator()
         file_menu.addAction("Close current Tab", self.close_current_tab)
 
         view_menu = menubar.addMenu("View")
@@ -452,7 +461,7 @@ class AntimatterApp(QMainWindow):
 
         task_menu = menubar.addMenu("Task")
         task_menu.addAction("Run", self.Drun)
-        task_menu.addAction("Run without debugger (Only for GUI apps)", task.run)
+        task_menu.addAction("Run with no debugger", task.run)
         task_menu.addAction("Build project", task.compile)
         task_menu.addAction("Find issues", self.issues)
 
@@ -460,6 +469,14 @@ class AntimatterApp(QMainWindow):
         tools_menu.addAction("Configure Project", util.project)
         tools_menu.addAction("Update Antimatter", util.update)
         tools_menu.addAction("Refresh RPC", discord)
+
+        git_menu = menubar.addMenu("Git")
+        git_menu.addAction("Connect to a remote git repository", git.set_repo)
+        git_menu.addSeparator()
+        git_menu.addAction("Add all files to commit", git.add)
+        git_menu.addAction("Commit with message", git.commit)
+        git_menu.addAction("Push to remote repository", git.push)
+        
 
     def _setup_shortcuts(self):
         binds = [
@@ -536,6 +553,7 @@ class AntimatterApp(QMainWindow):
         if file_path and hasattr(editor, "start_lsp"):
             editor.start_lsp(file_path)
 
+        self.stack.setCurrentIndex(1)
         self.tabs.setCurrentIndex(index)
         return editor
 
@@ -575,10 +593,12 @@ class AntimatterApp(QMainWindow):
             del self.tabs_data[widget]
         self.tabs.removeTab(index)
         if self.tabs.count() == 0:
-            self.create_new_tab()
+            self.stack.setCurrentIndex(0)
+            self.setWindowTitle("Comical Antimatter 2026")
 
     def close_current_tab(self):
-        self.close_tab_by_index(self.tabs.currentIndex())
+        if self.tabs.count() > 0:
+            self.close_tab_by_index(self.tabs.currentIndex())
 
     def cycle_next_tab(self):
         count = self.tabs.count()
@@ -650,38 +670,32 @@ class AntimatterApp(QMainWindow):
             return False
         return True
 
+    def show_terminal(self):
+        if not self.terminal_container.isVisible():
+            self.sidebar_was_visible = self.sidebar_dock.isVisible()
+            self.stack.hide()
+            self.terminal_container.show()
+            self.terminal_widget.set_focus()
+
     def toggle_terminal(self):
         if self.terminal_container.isVisible():
             self.restore_codeview()
         else:
-            self.sidebar_was_visible = self.sidebar_dock.isVisible()
-            self.tabs.hide()
-            self.terminal_container.show()
-            self.term_entry.setFocus()
+            self.show_terminal()
 
     def restore_codeview(self):
         self.terminal_container.hide()
-        self.tabs.show()
-
-    def _exec_terminal_cmd(self):
-        cmd = self.term_entry.text()
-        self.term_entry.clear()
-
-        if hasattr(self, "term_process") and self.term_process.poll() is None:
-            try:
-                self.term_process.stdin.write(cmd + "\n")
-                self.term_process.stdin.flush()
-            except Exception as e:
-                self.output_box.appendPlainText(f"\nError writing to terminal: {e}\n")
+        self.stack.show()
 
     def Drun(self):
-        self.toggle_terminal()
+        self.show_terminal()
         path3, _ = QFileDialog.getOpenFileName(
             self, "Choose file to run", "", "Python (*.py);;All files (*.*)"
         )
         if path3:
             cmd = f'python "{path3}"' if platform.system() == "Windows" else f"python3 {path3}"
-            self.term_entry.setText(cmd)
+            self.terminal_widget.term_entry.setText(cmd)
+            self.terminal_widget.set_focus()
 
     def issues(self):
         iss_win = QMainWindow(self)
@@ -701,20 +715,17 @@ class AntimatterApp(QMainWindow):
 
         output_str = Out.stdout + Out.stderr
         if not output_str.strip():
-            txt.setPlainText("Nothing wrong with this file. Nice work !")
+            txt.setPlainText("[✓]: No issues detected. Looks good !")
         elif output_str.strip() == ": No such file or directory":
-            txt.setPlainText("Save the file first before exploring issues.")
+            txt.setPlainText("[!]: Save the file first before exploring issues.")
         else:
-            txt.setPlainText(output_str)
+            txt.setPlainText(f"[!]: Issues with the current file:\n==============================\n{output_str}")
 
         iss_win.show()
 
     def closeEvent(self, event):
-        if hasattr(self, "term_reader"):
-            self.term_reader.stop()
-        if hasattr(self, "term_process"):
-            self.term_process.terminate()
         super().closeEvent(event)
+
     def show_files(self):
         self.sidebar_dock.toggleViewAction()
 
