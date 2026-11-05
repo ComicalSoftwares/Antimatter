@@ -1,0 +1,26 @@
+{
+  "name": "word-count",
+  "displayName": "Word Count",
+  "version": "1.0.0",
+  "publisher": "antimatter",
+  "description": "Shows lines, words and characters of the current file",
+  "main": "extension.py",
+  "activationEvents": [
+    "onCommand:antimatter.word-count.count"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "antimatter.word-count.count",
+        "title": "Count Words in Current File",
+        "category": "Text"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "antimatter.word-count.count",
+        "key": "Ctrl+Alt+W"
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "todo-finder",
+  "displayName": "TODO Finder",
+  "version": "1.0.0",
+  "publisher": "antimatter",
+  "description": "Lists every TODO, FIXME and HACK in the current file",
+  "main": "extension.py",
+  "activationEvents": [
+    "onCommand:antimatter.todo-finder.find"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "antimatter.todo-finder.find",
+        "title": "Find TODO Comments",
+        "category": "Search"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "antimatter.todo-finder.find",
+        "key": "Ctrl+Alt+T"
+      }
+    ]
+  }
+}

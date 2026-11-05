@@ -1,0 +1,24 @@
+{
+  "name": "Dracula",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#282a36",
+    "editor.foreground": "#f8f8f2",
+    "editor.selectionBackground": "#44475a",
+    "editor.lineHighlightBackground": "#2f3241",
+    "editorLineNumber.foreground": "#6272a4",
+    "editorLineNumber.activeForeground": "#f8f8f2"
+  },
+  "tokenColors": {
+    "keyword": "#ff79c6",
+    "string": "#f1fa8c",
+    "comment": "#6272a4",
+    "number": "#bd93f9",
+    "operator": "#ff79c6",
+    "function": "#50fa7b",
+    "class": "#8be9fd",
+    "builtin": "#8be9fd",
+    "namespace": "#8be9fd",
+    "tag": "#ff79c6"
+  }
+}

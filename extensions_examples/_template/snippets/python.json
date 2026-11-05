@@ -1,0 +1,6 @@
+{
+  "Hello": {
+    "prefix": "hello",
+    "body": ["print(\"${1:Hello}, ${2:world}\")", "$0"]
+  }
+}

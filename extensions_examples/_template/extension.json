@@ -1,0 +1,26 @@
+{
+  "name": "my-extension",
+  "displayName": "My Extension",
+  "version": "1.0.0",
+  "publisher": "me",
+  "description": "What this extension does",
+  "main": "extension.py",
+  "activationEvents": ["onCommand:me.my-extension.hello", "onLanguage:python"],
+  "contributes": {
+    "commands": [
+      {"command": "me.my-extension.hello", "title": "Say Hello", "category": "My Extension"}
+    ],
+    "keybindings": [
+      {"command": "me.my-extension.hello", "key": "Ctrl+Alt+H"}
+    ],
+    "languages": [
+      {"id": "myconfig", "extensions": [".myconf"], "lexer": "ini"}
+    ],
+    "themes": [
+      {"label": "My Theme", "path": "themes/my-theme.json"}
+    ],
+    "snippets": [
+      {"language": "python", "path": "snippets/python.json"}
+    ]
+  }
+}

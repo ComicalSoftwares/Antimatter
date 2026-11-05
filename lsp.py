@@ -1,19 +1,34 @@
-# This shit is kind of broken, gotta fix it later
-
 import asyncio
 import json
 import os
-import sys
+import threading
+from pathlib import Path
+
+import util
 
 LANG_SERVERS = {
-    "python": [sys.executable, "-m", "pylsp"]
+    "python": [util.python_exe(), "-m", "pylsp"]
 }
 
+_loop = None
+_loop_lock = threading.Lock()
+
+
+def get_loop():
+    global _loop
+    with _loop_lock:
+        if _loop is None:
+            _loop = asyncio.new_event_loop()
+            threading.Thread(target=_loop.run_forever, daemon=True, name="antimatter-lsp").start()
+        return _loop
+
+
+def register_server(language, command):
+    LANG_SERVERS[language] = list(command)
+
+
 def path_to_uri(path):
-    path = os.path.abspath(path).replace("\\", "/")
-    if not path.startswith("/"):
-        path = "/" + path
-    return f"file://{path}"
+    return Path(os.path.abspath(path)).as_uri()
 
 
 class LspClient:
@@ -32,19 +47,26 @@ class LspClient:
     def running(self):
         return self._proc is not None and self._proc.returncode is None
 
+    @property
+    def uri(self):
+        return self._uri
+
     async def start(self, language, root_path):
+        cmd = LANG_SERVERS.get(language)
+        if not cmd:
+            return False
         self._loop = asyncio.get_running_loop()
-        cmd = LANG_SERVERS.get(language, ["pylsp"])
 
         try:
             self._proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
             )
         except Exception as e:
             print(f"[LSP Error] Failed to launch server binary: {e}")
+            self._proc = None
             return False
 
         self._reader_task = self._loop.create_task(self._read_loop())
@@ -60,27 +82,30 @@ class LspClient:
                     },
                 },
             },
-        })
+        }, timeout=20)
 
         if init_res is None:
-            print("[LSP Error] Initialize request timed out or returned None.")
+            print("[LSP Error] Initialize request failed or timed out.")
+            await self.stop()
             return False
 
         await self._notify("initialized", {})
         return True
 
     async def stop(self):
-        if not self.running:
+        if self._proc is None:
             return
 
-        try:
-            await asyncio.wait_for(self._request("shutdown", None), timeout=2)
-            await self._notify("exit", None)
-        except Exception:
-            pass
+        if self.running:
+            try:
+                await asyncio.wait_for(self._request("shutdown", None), timeout=2)
+                await self._notify("exit", None)
+            except Exception:
+                pass
 
         if self._reader_task:
             self._reader_task.cancel()
+            self._reader_task = None
         if self._proc:
             try:
                 if self._proc.stdin:
@@ -88,15 +113,17 @@ class LspClient:
             except Exception:
                 pass
             try:
-                self._proc.terminate()
-                await asyncio.wait_for(self._proc.wait(), timeout=1)
+                if self._proc.returncode is None:
+                    self._proc.terminate()
+                    await asyncio.wait_for(self._proc.wait(), timeout=1)
             except Exception:
                 try:
                     self._proc.kill()
                 except Exception:
                     pass
         self._proc = None
-        self._pending.clear()
+        self._uri = None
+        self._fail_pending()
 
     async def did_open(self, path, text):
         self._uri = path_to_uri(path)
@@ -109,6 +136,12 @@ class LspClient:
                 "text": text,
             },
         })
+
+    async def did_close(self):
+        if not self._uri:
+            return
+        uri, self._uri = self._uri, None
+        await self._notify("textDocument/didClose", {"textDocument": {"uri": uri}})
 
     async def did_change(self, text):
         if not self._uri:
@@ -129,7 +162,7 @@ class LspClient:
                     "textDocument": {"uri": self._uri},
                     "position": {"line": line, "character": col},
                 }),
-                timeout=3,
+                timeout=5,
             )
         except Exception as e:
             print(f"[LSP Error] Completion request exception: {e}")
@@ -139,18 +172,30 @@ class LspClient:
             return []
 
         items = result if isinstance(result, list) else result.get("items", [])
+        items = sorted(items, key=lambda i: i.get("sortText") or i.get("label", ""))
 
         completions = []
+        seen = set()
         for item in items:
             label = item.get("label", "")
-            insert = item.get("insertText") or label
+            if not label or label in seen:
+                continue
+            seen.add(label)
+            text_edit = item.get("textEdit")
+            insert = item.get("insertText") or (text_edit or {}).get("newText") or label
             completions.append({"label": label, "insert": insert})
+            if len(completions) >= 200:
+                break
 
         return completions
 
-    # --- JSON-RPC Internals ---
+    def _fail_pending(self):
+        pending, self._pending = self._pending, {}
+        for future in pending.values():
+            if not future.done():
+                future.set_result(None)
 
-    async def _request(self, method, params):
+    async def _request(self, method, params, timeout=5):
         self._id += 1
         rid = self._id
 
@@ -159,8 +204,11 @@ class LspClient:
 
         await self._send({"jsonrpc": "2.0", "id": rid, "method": method, "params": params})
         try:
-            return await asyncio.wait_for(future, timeout=5)
+            return await asyncio.wait_for(future, timeout=timeout)
         except asyncio.TimeoutError:
+            self._pending.pop(rid, None)
+            return None
+        except Exception:
             self._pending.pop(rid, None)
             return None
 
@@ -180,7 +228,7 @@ class LspClient:
 
     async def _read_loop(self):
         try:
-            while self.running:
+            while True:
                 content_length = 0
                 while True:
                     line_bytes = await self._proc.stdout.readline()
@@ -199,16 +247,19 @@ class LspClient:
                 msg = json.loads(body.decode("utf-8"))
 
                 rid = msg.get("id")
+                if "method" in msg:
+                    if rid is not None:
+                        await self._send({"jsonrpc": "2.0", "id": rid, "result": None})
+                    continue
+
                 if rid is not None and rid in self._pending:
                     future = self._pending.pop(rid)
                     if not future.done():
-                        if "error" in msg:
-                            future.set_exception(
-                                Exception(msg["error"].get("message", "LSP error"))
-                            )
-                        else:
-                            future.set_result(msg.get("result"))
-        except (asyncio.CancelledError, ConnectionError):
+                        result = msg.get("result")
+                        future.set_result(None if "error" in msg else ({} if result is None else result))
+        except (asyncio.CancelledError, ConnectionError, asyncio.IncompleteReadError):
             pass
         except Exception as e:
             print(f"[LSP Read Loop Error]: {e}")
+        finally:
+            self._fail_pending()

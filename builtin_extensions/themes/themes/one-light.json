@@ -1,0 +1,17 @@
+{
+  "name": "One Light",
+  "type": "light",
+  "colors": {},
+  "tokenColors": {
+    "keyword": "#a626a4",
+    "string": "#50a14f",
+    "comment": "#a0a1a7",
+    "number": "#986801",
+    "operator": "#0184bc",
+    "function": "#4078f2",
+    "class": "#c18401",
+    "builtin": "#c18401",
+    "namespace": "#4078f2",
+    "tag": "#e45649"
+  }
+}

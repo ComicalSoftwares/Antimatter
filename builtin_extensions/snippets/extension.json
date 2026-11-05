@@ -1,0 +1,20 @@
+{
+  "name": "snippets",
+  "displayName": "Snippets Pack",
+  "version": "1.0.0",
+  "publisher": "antimatter",
+  "description": "Python and JavaScript snippets. Type a prefix and press Tab",
+  "activationEvents": [],
+  "contributes": {
+    "snippets": [
+      {
+        "language": "python",
+        "path": "snippets/python.json"
+      },
+      {
+        "language": "javascript",
+        "path": "snippets/javascript.json"
+      }
+    ]
+  }
+}

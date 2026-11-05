@@ -1,0 +1,24 @@
+{
+  "name": "Nord",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#2e3440",
+    "editor.foreground": "#d8dee9",
+    "editor.selectionBackground": "#434c5e",
+    "editor.lineHighlightBackground": "#333a47",
+    "editorLineNumber.foreground": "#4c566a",
+    "editorLineNumber.activeForeground": "#d8dee9"
+  },
+  "tokenColors": {
+    "keyword": "#81a1c1",
+    "string": "#a3be8c",
+    "comment": "#616e88",
+    "number": "#b48ead",
+    "operator": "#81a1c1",
+    "function": "#88c0d0",
+    "class": "#8fbcbb",
+    "builtin": "#8fbcbb",
+    "namespace": "#88c0d0",
+    "tag": "#81a1c1"
+  }
+}

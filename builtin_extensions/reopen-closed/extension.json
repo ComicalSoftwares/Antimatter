@@ -1,0 +1,26 @@
+{
+  "name": "reopen-closed",
+  "displayName": "Reopen Closed Tab",
+  "version": "1.0.0",
+  "publisher": "antimatter",
+  "description": "Brings back the file you just closed",
+  "main": "extension.py",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "antimatter.reopen-closed.reopen",
+        "title": "Reopen Closed Tab",
+        "category": "File"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "antimatter.reopen-closed.reopen",
+        "key": "Ctrl+Shift+T"
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Solarized Dark",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#002b36",
+    "editor.foreground": "#93a1a1",
+    "editor.selectionBackground": "#073642",
+    "editor.lineHighlightBackground": "#05323d",
+    "editorLineNumber.foreground": "#586e75",
+    "editorLineNumber.activeForeground": "#93a1a1"
+  },
+  "tokenColors": {
+    "keyword": "#859900",
+    "string": "#2aa198",
+    "comment": "#586e75",
+    "number": "#d33682",
+    "operator": "#859900",
+    "function": "#268bd2",
+    "class": "#b58900",
+    "builtin": "#cb4b16",
+    "namespace": "#268bd2",
+    "tag": "#268bd2"
+  }
+}

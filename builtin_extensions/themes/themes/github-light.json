@@ -1,0 +1,19 @@
+{
+  "name": "GitHub Light",
+  "type": "light",
+  "colors": {
+    "editor.foreground": "#24292e"
+  },
+  "tokenColors": {
+    "keyword": "#d73a49",
+    "string": "#032f62",
+    "comment": "#6a737d",
+    "number": "#005cc5",
+    "operator": "#d73a49",
+    "function": "#6f42c1",
+    "class": "#6f42c1",
+    "builtin": "#005cc5",
+    "namespace": "#6f42c1",
+    "tag": "#22863a"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Monokai",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#272822",
+    "editor.foreground": "#f8f8f2",
+    "editor.selectionBackground": "#49483e",
+    "editor.lineHighlightBackground": "#2f302a",
+    "editorLineNumber.foreground": "#75715e",
+    "editorLineNumber.activeForeground": "#c2c2bf"
+  },
+  "tokenColors": {
+    "keyword": "#f92672",
+    "string": "#e6db74",
+    "comment": "#75715e",
+    "number": "#ae81ff",
+    "operator": "#f92672",
+    "function": "#a6e22e",
+    "class": "#66d9ef",
+    "builtin": "#66d9ef",
+    "namespace": "#a6e22e",
+    "tag": "#f92672"
+  }
+}

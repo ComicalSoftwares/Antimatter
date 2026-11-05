@@ -1,0 +1,26 @@
+{
+  "name": "toggle-comment",
+  "displayName": "Toggle Comment",
+  "version": "1.0.0",
+  "publisher": "antimatter",
+  "description": "Comments or uncomments the selected lines using the right syntax for the file type",
+  "main": "extension.py",
+  "activationEvents": [
+    "onCommand:antimatter.toggle-comment.toggle"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "antimatter.toggle-comment.toggle",
+        "title": "Toggle Line Comment",
+        "category": "Edit"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "antimatter.toggle-comment.toggle",
+        "key": "Ctrl+/"
+      }
+    ]
+  }
+}

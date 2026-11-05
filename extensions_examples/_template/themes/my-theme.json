@@ -1,0 +1,24 @@
+{
+  "name": "My Theme",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#1b1d23",
+    "editor.foreground": "#d7dae0",
+    "editor.selectionBackground": "#2f3b54",
+    "editor.lineHighlightBackground": "#21242b",
+    "editorLineNumber.foreground": "#4b5263",
+    "editorLineNumber.activeForeground": "#abb2bf"
+  },
+  "tokenColors": {
+    "keyword": "#c678dd",
+    "string": "#98c379",
+    "comment": "#5c6370",
+    "number": "#d19a66",
+    "operator": "#56b6c2",
+    "function": "#61afef",
+    "class": "#e5c07b",
+    "builtin": "#e5c07b",
+    "namespace": "#61afef",
+    "tag": "#e06c75"
+  }
+}

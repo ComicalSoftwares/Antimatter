@@ -1,0 +1,36 @@
+{
+  "name": "themes",
+  "displayName": "Color Themes",
+  "version": "1.0.0",
+  "publisher": "antimatter",
+  "description": "Dracula, Monokai, Nord, Solarized Dark, One Light and GitHub Light",
+  "activationEvents": [],
+  "contributes": {
+    "themes": [
+      {
+        "label": "Dracula",
+        "path": "themes/dracula.json"
+      },
+      {
+        "label": "Monokai",
+        "path": "themes/monokai.json"
+      },
+      {
+        "label": "Nord",
+        "path": "themes/nord.json"
+      },
+      {
+        "label": "Solarized Dark",
+        "path": "themes/solarized-dark.json"
+      },
+      {
+        "label": "One Light",
+        "path": "themes/one-light.json"
+      },
+      {
+        "label": "GitHub Light",
+        "path": "themes/github-light.json"
+      }
+    ]
+  }
+}

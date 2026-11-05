@@ -1,0 +1,54 @@
+{
+  "name": "text-tools",
+  "displayName": "Text Tools",
+  "version": "1.0.0",
+  "publisher": "antimatter",
+  "description": "Sort lines, remove duplicates, change case and clean trailing whitespace",
+  "main": "extension.py",
+  "activationEvents": [
+    "onCommand:antimatter.text-tools.sort",
+    "onCommand:antimatter.text-tools.dedupe",
+    "onCommand:antimatter.text-tools.upper",
+    "onCommand:antimatter.text-tools.lower",
+    "onCommand:antimatter.text-tools.trim"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "antimatter.text-tools.sort",
+        "title": "Sort Lines",
+        "category": "Text"
+      },
+      {
+        "command": "antimatter.text-tools.dedupe",
+        "title": "Remove Duplicate Lines",
+        "category": "Text"
+      },
+      {
+        "command": "antimatter.text-tools.upper",
+        "title": "Transform to Uppercase",
+        "category": "Text"
+      },
+      {
+        "command": "antimatter.text-tools.lower",
+        "title": "Transform to Lowercase",
+        "category": "Text"
+      },
+      {
+        "command": "antimatter.text-tools.trim",
+        "title": "Trim Trailing Whitespace",
+        "category": "Text"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "antimatter.text-tools.upper",
+        "key": "Ctrl+Alt+U"
+      },
+      {
+        "command": "antimatter.text-tools.lower",
+        "key": "Ctrl+Alt+L"
+      }
+    ]
+  }
+}

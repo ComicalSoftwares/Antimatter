@@ -1,0 +1,60 @@
+{
+  "name": "file-types",
+  "displayName": "Extra File Types",
+  "version": "1.0.0",
+  "publisher": "antimatter",
+  "description": "Syntax highlighting for .env, .conf, .jsonc, .gradle, .tf, .vue and more",
+  "activationEvents": [],
+  "contributes": {
+    "languages": [
+      {
+        "id": "ini",
+        "extensions": [
+          ".env",
+          ".conf",
+          ".properties"
+        ],
+        "lexer": "ini"
+      },
+      {
+        "id": "json",
+        "extensions": [
+          ".jsonc",
+          ".json5"
+        ],
+        "lexer": "json"
+      },
+      {
+        "id": "groovy",
+        "extensions": [
+          ".gradle"
+        ],
+        "lexer": "groovy"
+      },
+      {
+        "id": "terraform",
+        "extensions": [
+          ".tf",
+          ".tfvars"
+        ],
+        "lexer": "terraform"
+      },
+      {
+        "id": "javascript",
+        "extensions": [
+          ".mjs",
+          ".cjs"
+        ],
+        "lexer": "javascript"
+      },
+      {
+        "id": "html",
+        "extensions": [
+          ".vue",
+          ".svelte"
+        ],
+        "lexer": "html"
+      }
+    ]
+  }
+}

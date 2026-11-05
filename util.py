@@ -1,39 +1,45 @@
 # Antimatter's utilities module
 
 import json
+import sys
+import shutil
 import webbrowser
-import platform
 import subprocess
 import urllib.request
 import re
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
-CURRENT_VERSION = "1.6"
+CURRENT_VERSION = "1.7"
+
+
+def python_exe():
+    if getattr(sys, "frozen", False):
+        return shutil.which("python3") or shutil.which("python") or "python"
+    return sys.executable
+
 
 def project():
     folder = QFileDialog.getExistingDirectory(None, "Choose project folder")
     if folder:
         try:
             print(f"Folder: {folder}")
-            subprocess.run(f"cd '{folder}'", shell=True)
-            subprocess.run("python -m venv .venv", shell=True)
-            if platform.system() == "Windows":
-                subprocess.run(".venv/Scripts/activate", shell=True)
-            else:
-                subprocess.run("source .venv/bin/activate", shell=True)
+            subprocess.run([python_exe(), "-m", "venv", ".venv"], cwd=folder, check=True, capture_output=True, text=True)
             QMessageBox.information(None, "Done", "Project configured successfully")
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(None, "Error", f"Couldn't configure project: \n{e.stderr or e}")
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Couldn't configure project: \n{e}")
     else:
         print("An error occured while trying to create the environment !")
 
 def docs():
-    webbrowser.open("www.github.com/ComicalSoftwares/Antimatter/Wiki")
+    webbrowser.open("https://github.com/ComicalSoftwares/Antimatter/wiki")
 
 def update():
     update_url = "https://api.github.com/repos/ComicalSoftwares/Antimatter/releases/latest"
     try:
-        with urllib.request.urlopen(update_url, timeout=10) as resp:
+        request = urllib.request.Request(update_url, headers={"User-Agent": "Antimatter"})
+        with urllib.request.urlopen(request, timeout=10) as resp:
             if resp.status != 200:
                 QMessageBox.critical(None, "Update", f"Couldn't check for updates (HTTP {resp.status}).")
                 return

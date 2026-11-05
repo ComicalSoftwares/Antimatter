@@ -79,13 +79,21 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [ ] Themes
 - [ ] Custom fonts
 - [ ] Modify position of the sidebar (File Manager) **(Exists but it doesn't save the new position)**
-- [ ] Extensions
+- [X] Extensions (alpha)
 ### Git support
 - [ ] Git clone
 - [ ] Git commit
 - [ ] Git Push
 - [ ] Git Sync
 And all of the other essential git functions (whch aren't here yet unfortunately)
+
+## Extensions
+Antimatter extensions work like VS Code extensions: a folder with an `extension.json` manifest that contributes commands, keybindings, languages, color themes and snippets, plus a Python entry point that is only loaded when an activation event fires.
+
+- Manage them with **Ctrl+Shift+X**, run commands with the palette (**Ctrl+Shift+P** or **F1**), switch color themes with **Ctrl+K Ctrl+T**.
+- Install third party extensions from a `.amext` package (**Extensions > Install Extension from File...**) or by dropping a folder into `~/.antimatter/extensions`.
+- Eight extensions are built in (themes, snippets, toggle comment, text tools and more).
+- Start your own from `extensions_examples/_template`. The full guide is in `extensions_examples/README.md`.
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:
