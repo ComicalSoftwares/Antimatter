@@ -22,6 +22,17 @@
     "modules": [
         "python3-deps.json",
         {
+    	"name": "git",
+	    "buildsystem": "autotools",
+	    "sources": [
+        	{
+        	"type": "archive",
+        	"url": "https://www.kernel.org/pub/software/scm/git/git-2.56.0.tar.xz",
+        	"sha256": "26c56c296b38c0695b26fa95f475f1d01704d2d38e73465ca30b0b2f5dc789d3"
+        	}
+    		]
+	},
+        {
             "name": "antimatter",
             "buildsystem" : "simple",
             "build-commands": [
@@ -36,7 +47,7 @@
                 {
                     "type": "git",
                     "url": "https://github.com/ComicalSoftwares/Antimatter.git",
-                    "commit": "1bcd7f6b9832593c8ddc5958dfa7be94a91bd5fe"
+                    "commit": "6a815ff0c64936efff815381e6036affb87158dc"
                 }
             ]
         }
