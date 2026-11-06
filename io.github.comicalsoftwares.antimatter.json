@@ -1,0 +1,42 @@
+{
+    "id": "io.github.comicalsoftwares.antimatter",
+
+    "runtime": "org.kde.Platform",
+
+    "runtime-version": "6.7",
+
+    "sdk": "org.kde.Sdk",
+
+    "base": "com.riverbankcomputing.PyQt.BaseApp",
+
+    "base-version": "6.7",
+
+    "command": "antimatter",
+    "finish-args": [
+        "--share=ipc",
+        "--socket=fallback-x11",
+        "--socket=wayland",
+        "--filesystem=home",
+        "--socket=session-bus"
+    ],
+    "modules": [
+        "python3-deps.json",
+        {
+            "name": "Comical Antimatter",
+            "buildsystem" : "simple",
+            "build-commands" : [
+                "mkdir -p /app/lib/antimatter /app/bin",
+                "cp *.py /app/lib/antimatter/",
+                "printf '#!/bin/sh\\nexec python3 /app/lib/antimatter/main.py \"$@\"\\n' > /app/bin/antimatter",
+                "chmod +x /app/bin/antimatter"
+            ],
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://github.com/ComicalSoftwares/Antimatter.git",
+                    "commit": "YOUR_EXACT_40_CHARACTER_COMMIT_SHA"
+                }
+            ]
+        }
+    ]
+}

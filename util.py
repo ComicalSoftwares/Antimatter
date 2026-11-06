@@ -1,4 +1,4 @@
-# Antimatter's utilities module
+# Antimatter's utilities module (which I forgot existed)
 
 import json
 import webbrowser
@@ -8,7 +8,7 @@ import urllib.request
 import re
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
-CURRENT_VERSION = "1.6"
+CURRENT_VERSION = "1.7"
 
 def project():
     folder = QFileDialog.getExistingDirectory(None, "Choose project folder")
@@ -28,7 +28,7 @@ def project():
         print("An error occured while trying to create the environment !")
 
 def docs():
-    webbrowser.open("www.github.com/ComicalSoftwares/Antimatter/Wiki")
+    webbrowser.open("https://antimatter.codelyteam.com/#docs/Quick-Start-Guide")
 
 def update():
     update_url = "https://api.github.com/repos/ComicalSoftwares/Antimatter/releases/latest"

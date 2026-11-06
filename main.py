@@ -14,38 +14,84 @@ from PyQt6.QtWidgets import (
     QDockWidget, QMenu, QInputDialog, QStackedWidget,
     QGraphicsColorizeEffect, QLabel
 )
+
+# To anyone looking at this mess, don't mind the comments on these imports,
+# they're just internet jokes
+
 import codeview # My beloved codeviewer
-import task # For debugging
+import task # For debugging/compiling
 import util # Whatever this even is
 import terminal # sudo rm -rf /* --yes-preserve-root
-import git
+import git # git commit -m "Minor Changes
 
+
+# Make Antimatter find out it's parent dir
 BASE_DIR = Path(__file__).resolve().parent
 
+
+# Setup Discord Rich Presence
 RPC = None
+RPC_START_TIME = time.time()
+
+def update_rpc(filename=None, is_file_path=True):
+    #global RPC # Disabled for testing purposes
+    if not RPC:
+        return
+    try:
+        if filename:
+            display_name = Path(filename).name if is_file_path else filename
+            details = f"Editing {display_name}"
+        else:
+            details = "Editing an untitled file"
+            
+        RPC.update(
+            details=details,
+            start=RPC_START_TIME,
+            large_image="image",
+            large_text="Antimatter",
+        )
+    except Exception as e:
+        print(f"Couldn't update Discord RPC: {e}")
 
 def discord():
     global RPC
     try:
         from pypresence import Presence
         client_id = "1487828344480464957"
-        for pipe_num in range(10):
-            RPC = Presence(client_id, pipe=pipe_num)
-            RPC.connect()
-            RPC.update(
-                details="Inside the editor",
-                start=time.time(),
-                large_image="image",
-                large_text="Antimatter",
-            )
+        if not RPC:
+            for pipe_num in range(10):
+                try:
+                    RPC = Presence(client_id, pipe=pipe_num)
+                    RPC.connect()
+                    break
+                except Exception:
+                    continue
+        
+        filename = None
+        app_instance = QApplication.instance()
+        if app_instance:
+            for top_widget in app_instance.topLevelWidgets():
+                if isinstance(top_widget, AntimatterApp):
+                    ed = top_widget.get_current_editor()
+                    if ed:
+                        path = top_widget.get_current_path()
+                        if path:
+                            filename = Path(path).name
+                        else:
+                            tabs_data = getattr(top_widget, 'tabs_data', {})
+                            if ed in tabs_data:
+                                filename = tabs_data[ed].get("title", "Untitled")
+        update_rpc(filename)
     except Exception as e:
         print(f"Discord RPC Error: {e}")
+
+# The main app window and it's core functions
 
 class AntimatterApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setObjectName("Comical")
-        self.setWindowTitle("Comical Antimatter 2026")
+        self.setWindowTitle("Comical Antimatter")
         self.resize(1050, 650)
         
         self.copied_path = None
@@ -246,7 +292,7 @@ class AntimatterApp(QMainWindow):
         """)
         self.stack.addWidget(self.tabs)
 
-        # Live Terminal Widget Integration
+        # Live Terminal Widget
         self.terminal_container = QWidget()
         term_layout = QVBoxLayout(self.terminal_container)
         term_layout.setContentsMargins(5, 5, 5, 5)
@@ -299,7 +345,7 @@ class AntimatterApp(QMainWindow):
             act_delete = menu.addAction("Delete")
 
         menu.addSeparator()
-        act_reveal = menu.addAction("Show in File Manager")
+        act_reveal = menu.addAction("Show in System's File Manager")
 
         action = menu.exec(self.tree.viewport().mapToGlobal(position))
 
@@ -321,7 +367,7 @@ class AntimatterApp(QMainWindow):
             self._tree_show_in_explorer(path or target_folder)
 
     def _tree_create_file(self, parent_dir):
-        name, ok = QInputDialog.getText(self, "New File", "Give your new file a name (don't forget the extension):")
+        name, ok = QInputDialog.getText(self, "New File", "Give your new file a name & an extension (e.g: test.py):")
         if ok and name.strip():
             target = os.path.join(parent_dir, name.strip())
             try:
@@ -355,7 +401,7 @@ class AntimatterApp(QMainWindow):
             else:
                 shutil.copy2(src, dest)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to paste:\n{e}")
+            QMessageBox.critical(self, "Error", f"Failed to paste element:\n{e}")
 
     def _tree_duplicate_item(self, path):
         src = Path(path)
@@ -437,6 +483,9 @@ class AntimatterApp(QMainWindow):
             self.file_model.setRootPath(folder)
             self.tree.setRootIndex(self.file_model.index(folder))
 
+    
+    # Top menubar (For file/View/Task and that other stuff)
+
     def _setup_menubar(self):
         menubar = self.menuBar()
         menubar.setStyleSheet("""
@@ -444,6 +493,11 @@ class AntimatterApp(QMainWindow):
             QMenuBar::item:selected { background-color: #5400ba; }
             QMenu { background-color: #181825; color: #cdd6f4; border: none solid #313244; }
             QMenu::item:selected { background-color: #313244; }
+            QMenu::separator {
+                height: 1px;
+                background-color: #89b4fa;
+                margin: 4px 8px;
+            }
         """)
 
         file_menu = menubar.addMenu("File")
@@ -465,17 +519,18 @@ class AntimatterApp(QMainWindow):
         task_menu.addAction("Find issues\tCtrl + I", self.issues)
 
         tools_menu = menubar.addMenu("Tools")
+        tools_menu.addAction("Open official Antimatter Documentation\tF1", util.docs)
         tools_menu.addAction("Set up .venv environment", util.project)
-        tools_menu.addAction("Update Antimatter", util.update)
-        tools_menu.addAction("Refresh RPC", discord)
+        tools_menu.addAction("Check for updates", util.update)
+        tools_menu.addAction("Refresh Discord RPC", discord)
 
         git_menu = menubar.addMenu("Git")
         git_menu.addAction("Add remote repository", git.set_repo)
         git_menu.addAction("Clone", git.clone)
-        git_menu.addAction("Sync (Pull)", git.sync)
         git_menu.addSeparator()
         git_menu.addAction("Add files (Git add)", git.add)
         git_menu.addAction("Commit", git.commit)
+        git_menu.addAction("Sync (Pull)", git.sync)
         git_menu.addAction("Push", git.push)
         
 
@@ -495,6 +550,7 @@ class AntimatterApp(QMainWindow):
             ("Ctrl+F", lambda: self._ed(lambda ed: ed.open_find(False))),
             ("Ctrl+R", lambda: self._ed(lambda ed: ed.open_find(True))),
             ("Ctrl+Shift+P", lambda: self._ed(lambda ed: ed.toggle_preview())),
+            ("F1", util.docs)
         ]
         for seq, fn in binds:
             action = QAction(self)
@@ -570,6 +626,12 @@ class AntimatterApp(QMainWindow):
 
         self.stack.setCurrentIndex(1)
         self.tabs.setCurrentIndex(index)
+
+        if file_path:
+            update_rpc(file_path, is_file_path=True)
+        else:
+            update_rpc(None)
+
         return editor
 
     def mark_tab_modified(self, editor):
@@ -589,13 +651,17 @@ class AntimatterApp(QMainWindow):
     def _on_tab_changed(self, index):
         editor = self.get_current_editor()
         if not editor:
+            update_rpc(None)
+            self.setWindowTitle("Comical Antimatter")
             return
         path = self.tabs_data[editor]["path"]
 
         if path:
-            self.setWindowTitle(f"{path} - Comical Antimatter 2026")
+            self.setWindowTitle(f"{path} - Comical Antimatter")
+            update_rpc(path, is_file_path=True)
         else:
-            self.setWindowTitle("Comical Antimatter 2026")
+            self.setWindowTitle("Comical Antimatter")
+            update_rpc(None)
 
     def close_tab_by_widget(self, widget):
         idx = self.tabs.indexOf(widget)
@@ -609,7 +675,8 @@ class AntimatterApp(QMainWindow):
         self.tabs.removeTab(index)
         if self.tabs.count() == 0:
             self.stack.setCurrentIndex(0)
-            self.setWindowTitle("Comical Antimatter 2026")
+            self.setWindowTitle("Comical Antimatter")
+            update_rpc(None)
 
     def close_current_tab(self):
         if self.tabs.count() > 0:
@@ -660,11 +727,12 @@ class AntimatterApp(QMainWindow):
             self.tabs_data[editor]["path"] = path2
             self.tabs_data[editor]["title"] = filename
             self.mark_tab_saved(editor)
-            self.setWindowTitle(f"{path2} - Comical Antimatter 2026")
+            self.setWindowTitle(f"{path2} - Comical Antimatter")
             if hasattr(editor, "start_lsp"):
                 editor.start_lsp(path2)
             if hasattr(editor, "set_file_path"):
                 editor.set_file_path(path2)
+            update_rpc(filename)
             return True
         except Exception as e:
             QMessageBox.critical(self, "Save Error", f"Could not save file:\n{e}")
@@ -682,6 +750,7 @@ class AntimatterApp(QMainWindow):
             with open(path, "w", encoding="utf-8") as f:
                 f.write(content)
             self.mark_tab_saved(editor)
+            update_rpc(Path(path).name)
         except Exception as e:
             QMessageBox.critical(self, "Save Error", f"Could not save file:\n{e}")
             return False
@@ -717,7 +786,7 @@ class AntimatterApp(QMainWindow):
     def issues(self):
         iss_win = QMainWindow(self)
         iss_win.resize(700, 400)
-        iss_win.setWindowTitle("Issues - Comical Antimatter 2026")
+        iss_win.setWindowTitle("Issues - Comical Antimatter")
 
         txt = QPlainTextEdit(iss_win)
         txt.setReadOnly(True)
@@ -752,4 +821,5 @@ if __name__ == "__main__":
     app.setDesktopFileName("com.comicalsoftwares.antimatter")
     window = AntimatterApp()
     window.show()
+    discord()
     sys.exit(app.exec())

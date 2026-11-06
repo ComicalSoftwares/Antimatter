@@ -1,0 +1,4 @@
+pyflakes
+pypresence
+pygments
+Pillow

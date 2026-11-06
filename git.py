@@ -1,8 +1,10 @@
 import subprocess
 import os
-from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QDialog, QVBoxLayout, QPlainTextEdit, QPushButton
+from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QDialog, QVBoxLayout, QPlainTextEdit, QPushButton, QTextBrowser
+import re
+import html
 
-
+# Git add
 def add():
     project_dir = QFileDialog.getExistingDirectory(None, "Select project folder")
     if not project_dir:
@@ -18,6 +20,7 @@ def add():
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f"Action 'git add {files}' couldn't be completed for the following reason: {e}")
 
+# Git commit
 def commit():
     project_dir = QFileDialog.getExistingDirectory(None, "Select current working directory")
     if not project_dir:
@@ -33,6 +36,7 @@ def commit():
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git commit -m "{message}"' couldn't be completed for the following reason: {e}''')
 
+# Git remote add origin
 def set_repo():
     project_dir = QFileDialog.getExistingDirectory(None, "Select project folder")
     if not project_dir:
@@ -49,6 +53,7 @@ def set_repo():
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git remote add origin "{url}"' couldn't be completed for the following reason: {e}''')
 
+# Git push
 def push():
     project_dir = QFileDialog.getExistingDirectory(None, "Select project folder")
     if not project_dir:
@@ -64,6 +69,7 @@ def push():
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f"Push couldn't be completed for the following reason: {e}")
 
+# Git Clone
 def clone():
     project_dir = QFileDialog.getExistingDirectory(None, "Select parent destination folder")
     if not project_dir:
@@ -79,6 +85,7 @@ def clone():
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git clone "{url}"' couldn't be completed for the following reason: {e}''')
 
+# Git pull
 def sync():
     project_dir = QFileDialog.getExistingDirectory(None, "Select the folder where your repository lives")
     if not project_dir:
@@ -90,19 +97,23 @@ def sync():
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Sync action via 'git pull"' couldn't be completed for the following reason: {e}''')
 
-
-def _show_text_dialog(title, content):
+# Window for Git status/Doff/Blame
+def _show_text_dialog(title, content, is_html=False):
     dlg = QDialog()
     dlg.resize(650, 450)
     dlg.setWindowTitle(title)
     dlg.setStyleSheet("background-color: #363636; color: purple;")
     layout = QVBoxLayout(dlg)
     
-    edit = QPlainTextEdit(dlg)
-    edit.setPlainText(content)
+    edit = QTextBrowser(dlg)
+    if is_html:
+        edit.setHtml(content)
+    else:
+        edit.setPlainText(content)
+        
     edit.setReadOnly(True)
     edit.setStyleSheet("""
-        QPlainTextEdit {
+        QTextBrowser {
             background-color: #19191a;
             color: #cdd6f4;
             border: 1px solid #313244;
@@ -132,15 +143,6 @@ def _show_text_dialog(title, content):
         QScrollBar::handle:hover {
             background: #585b70;
         }
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
-        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
-        QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
-            background: none;
-            border: none;
-            width: 0px;
-            height: 0px;
-        }
     """)
     layout.addWidget(edit)
     
@@ -161,39 +163,7 @@ def _show_text_dialog(title, content):
     layout.addWidget(btn)
     dlg.exec()
 
-def show_file_diff(file_path):
-    if not file_path or not os.path.exists(file_path):
-        _show_text_dialog("Git Diff Error", "File path does not exist.")
-        return
-    root_dir = os.path.dirname(os.path.abspath(file_path))
-    rel_path = os.path.relpath(file_path, root_dir)
-    try:
-        result = subprocess.run(
-            f'git diff "{rel_path}"',
-            cwd=root_dir, shell=True, capture_output=True, text=True, check=True
-        )
-        output = result.stdout if result.stdout else "No changes detected for this file."
-        _show_text_dialog("Git Diff", output)
-    except Exception as e:
-        _show_text_dialog("Git Diff Error", str(e))
-
-def show_file_blame(file_path):
-    if not file_path or not os.path.exists(file_path):
-        _show_text_dialog("Git Blame Error", "File doesn't exist.")
-        return
-    root_dir = os.path.dirname(os.path.abspath(file_path))
-    rel_path = os.path.relpath(file_path, root_dir)
-    try:
-        result = subprocess.run(
-            f'git blame "{rel_path}"',
-            cwd=root_dir, shell=True, capture_output=True, text=True, check=True
-        )
-        _show_text_dialog("Git Blame", result.stdout)
-    except subprocess.CalledProcessError:
-        _show_text_dialog("Git Blame", "Cannot run blame: File is untracked or has not been committed yet.")
-    except Exception as e:
-        _show_text_dialog("Git Blame Error", str(e))
-
+# Git status (For viewing uncommited files only)
 def get_status(file_path):
     if not file_path:
         return
@@ -207,7 +177,90 @@ def get_status(file_path):
             "git status --porcelain",
             cwd=root_dir, shell=True, capture_output=True, text=True, check=True
         )
-        output = result.stdout if result.stdout else "Working tree clean. No uncommitted files."
-        _show_text_dialog("Git Status", output)
+        raw_output = result.stdout.strip()
+        if not raw_output:
+            _show_text_dialog("Git Status", "Working tree clean. No uncommitted files.")
+            return
+
+        formatted_lines = []
+        for line in raw_output.splitlines():
+            safe_line = html.escape(line)
+            if line.startswith(" M") or line.startswith("M "):
+                formatted_lines.append(f'<font color="#f69d50"><b>M</b></font> {safe_line[2:]}')
+            elif line.startswith("??"):
+                formatted_lines.append(f'<font color="#a6e3a1"><b>??</b></font> {safe_line[2:]}')
+            elif line.startswith(" A") or line.startswith("A "):
+                formatted_lines.append(f'<font color="#89b4fa"><b>A</b></font> {safe_line[2:]}')
+            elif line.startswith(" D") or line.startswith("D "):
+                formatted_lines.append(f'<font color="#f38ba8"><b>D</b></font> {safe_line[2:]}')
+            else:
+                formatted_lines.append(safe_line)
+
+        html_body = f"<pre style='font-family: Consolas;'>{'<br>'.join(formatted_lines)}</pre>"
+        _show_text_dialog("Git Status", html_body, is_html=True)
     except Exception as e:
         _show_text_dialog("Git Status Error", str(e))
+
+# Git Blame
+def show_file_blame(file_path):
+    if not file_path or not os.path.exists(file_path):
+        _show_text_dialog("Git Blame Error", "File doesn't exist.")
+        return
+    root_dir = os.path.dirname(os.path.abspath(file_path))
+    rel_path = os.path.relpath(file_path, root_dir)
+    try:
+        result = subprocess.run(
+            f'git blame "{rel_path}"',
+            cwd=root_dir, shell=True, capture_output=True, text=True, check=True
+        )
+        formatted_lines = []
+        for line in result.stdout.splitlines():
+            safe_line = html.escape(line)
+            line_html = re.sub(
+                r'^([a-f0-9^]+)\s+\((.*?)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+[-+]\d{4})\s+(\d+)\)(.*)$',
+                r'<font color="#89b4fa"><b>\1</b></font> (<font color="#cba6f7">\2</font> <font color="#f9e2af">\3</font> <font color="#74c7ec">\4</font>)\5',
+                safe_line
+            )
+            formatted_lines.append(line_html)
+
+        html_body = f"<pre style='font-family: Consolas;'>{'<br>'.join(formatted_lines)}</pre>"
+        _show_text_dialog("Git Blame", html_body, is_html=True)
+    except subprocess.CalledProcessError:
+        _show_text_dialog("Git Blame", "Cannot run blame: File is untracked or has not been committed yet.")
+    except Exception as e:
+        _show_text_dialog("Git Blame Error", str(e))
+
+# Git Diff
+def show_file_diff(file_path):
+    if not file_path or not os.path.exists(file_path):
+        _show_text_dialog("Git Diff Error", "File path does not exist.")
+        return
+    root_dir = os.path.dirname(os.path.abspath(file_path))
+    rel_path = os.path.relpath(file_path, root_dir)
+    try:
+        result = subprocess.run(
+            f'git diff "{rel_path}"',
+            cwd=root_dir, shell=True, capture_output=True, text=True, check=True
+        )
+        raw_output = result.stdout.strip()
+        if not raw_output:
+            _show_text_dialog("Git Diff", "No changes detected for this file.")
+            return
+
+        formatted_lines = []
+        for line in raw_output.splitlines():
+            safe_line = html.escape(line)
+            
+            if line.startswith("+") and not line.startswith("+++"):
+                formatted_lines.append(f'<font color="#a6e3a1"><b>+</b></font> {safe_line[1:]}')
+            elif line.startswith("-") and not line.startswith("---"):
+                formatted_lines.append(f'<font color="#f38ba8"><b>-</b></font> {safe_line[1:]}')
+            elif line.startswith("@@"):
+                formatted_lines.append(f'<font color="#cba6f7"><b>{safe_line}</b></font>')
+            else:
+                formatted_lines.append(f'<font color="#cdd6f4">{safe_line}</font>')
+
+        html_body = f"<pre style='font-family: Consolas;'>{'<br>'.join(formatted_lines)}</pre>"
+        _show_text_dialog("Git Diff", html_body, is_html=True)
+    except Exception as e:
+        _show_text_dialog("Git Diff Error", str(e))

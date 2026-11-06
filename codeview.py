@@ -43,8 +43,10 @@ class LineNumberArea(QWidget):
         self.codeEditor.lineNumberAreaPaintEvent(event)
 
 
-class PythonHighlighter(QSyntaxHighlighter):
+# Thanks to contributor LiteBands-Pro for showing me how to fix
+# the syntax rendering bugs and improving the codeviewer's logic
 
+class PythonHighlighter(QSyntaxHighlighter):
     TRIPLE = {1: '"""', 2: "'''"}
 
     def __init__(self, document):
@@ -104,6 +106,7 @@ class PythonHighlighter(QSyntaxHighlighter):
             else:
                 fmt(s, e - s, f[kind])
 
+# We now support Markdown !
 
 class MarkdownHighlighter(QSyntaxHighlighter):
     def __init__(self, document):
@@ -263,14 +266,25 @@ class AntimatterTextEdit(QPlainTextEdit):
         self.setExtraSelections(sels)
 
 
+# Find/Replace implementation, inspired by contributor Litebands-Pro's approach
+
 class FindBar(QFrame):
     def __init__(self, edit):
         super().__init__()
         self.edit = edit
-        self.setStyleSheet('''FindBar { 
-            background: #2a2a2e; 
-            border-bottom: 1px solid #313244; 
-        }''')
+        self.setStyleSheet('''
+            FindBar { 
+                background: #19191a; 
+                border-bottom: 3px solid #313244; 
+                }
+            QToolTip {
+                background-color: #181825;
+                color: #cdd6f4;
+                border: 1px solid #313244;
+                padding: 5px;
+                font-size: 15px;
+                border-radius: 4px;
+            }''')
         outer = QVBoxLayout(self)
         outer.setContentsMargins(8, 6, 8, 6)
         outer.setSpacing(4)
@@ -413,6 +427,7 @@ class FindBar(QFrame):
 class LspSignals(QObject):
     completions_ready = pyqtSignal(list)
 
+# Main Codeviewer's module logic and widget implementation
 
 class AntimatterEditor(QFrame):
     def __init__(self, parent=None):
@@ -580,6 +595,8 @@ class AntimatterEditor(QFrame):
         if self.comp_popup:
             self.comp_popup.close()
 
+    # Context Menu for Copy-paste and stuff
+
     def _show_context_menu(self, pos):
         menu = QMenu(self)
         menu.setStyleSheet("""
@@ -591,6 +608,11 @@ class AntimatterEditor(QFrame):
             QMenu::item:selected {
                 background-color: #313244;
                 color: white;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #89b4fa;
+                margin: 4px 8px;
             }
         """)
 

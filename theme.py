@@ -1,5 +1,4 @@
-"""One palette + one app-wide stylesheet. Per-widget stylesheets are slow to repolish,
-so everything lives in APP_QSS and is applied once on the QApplication."""
+# Inherited from a random repo online, gotta clean up this or make use of it later
 
 from PyQt6.QtGui import QFont
 
