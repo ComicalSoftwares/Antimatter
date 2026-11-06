@@ -75,10 +75,10 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] Live terminal
 - [X] Running Scripts (With and without debugger)
 ### Customization
-- [ ] Preferences
-- [ ] Themes
-- [ ] Custom fonts
-- [ ] Modify position of the sidebar (File Manager) **(Exists but it doesn't save the new position)**
+- [X] Preferences
+- [X] Themes
+- [X] Custom fonts
+- [X] Modify position of the sidebar (File Manager), the position is now saved
 - [X] Extensions (alpha)
 ### Git support
 - [ ] Git clone
@@ -87,6 +87,17 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [ ] Git Sync
 And all of the other essential git functions (whch aren't here yet unfortunately)
 
+## Customization
+Open **File > Preferences** (Ctrl+,) or use the command palette (Ctrl+Shift+P, then type "Preferences").
+
+- **Themes:** the color theme styles the editor and the whole interface (sidebar, tabs, menus, status bar, terminal, dialogs). Pick one from Preferences or with Ctrl+K Ctrl+T. More themes come from extensions.
+- **Fonts:** choose any installed monospaced font, set the size (also Ctrl + mouse wheel), or add your own `.ttf`, `.otf` or `.ttc` file. Extensions can ship fonts with `contributes.fonts`.
+- **Editor:** tab size, word wrap, current line highlight and smooth scrolling.
+- **Layout:** the File Manager can sit on the left or the right. Drag it or use Preferences, and its side, width and visibility are remembered, along with the window size.
+- **Animations:** springy dialogs, a sliding sidebar, fades and animated buttons and switches. Turn them off in Preferences if you prefer a static interface.
+
+Everything is stored in `~/.antimatter/settings.json`.
+
 ## Extensions
 Antimatter extensions work like VS Code extensions: a folder with an `extension.json` manifest that contributes commands, keybindings, languages, color themes and snippets, plus a Python entry point that is only loaded when an activation event fires.
 
@@ -94,6 +105,26 @@ Antimatter extensions work like VS Code extensions: a folder with an `extension.
 - Install third party extensions from a `.amext` package (**Extensions > Install Extension from File...**) or by dropping a folder into `~/.antimatter/extensions`.
 - Eight extensions are built in (themes, snippets, toggle comment, text tools and more).
 - Start your own from `extensions_examples/_template`. The full guide is in `extensions_examples/README.md`.
+
+## Benchmarks
+Old version (previous release) against the current one. Median of 3 runs, headless Qt (offscreen), Python 3.12, a 20,000 line Python file, 11 tabs open, `pylsp` installed. Absolute numbers depend on the machine, so compare the ratios.
+
+| Metric | Old | New | Change |
+| --- | --- | --- | --- |
+| Startup (ms) | 153 | 139 | 1.1x faster |
+| Open a 20k line file (ms) | 2262 | 1393 | 1.6x faster |
+| Re-highlight 20k lines (ms) | 5534 | 1505 | 3.7x faster |
+| Open 10 more tabs (ms) | 331 | 157 | 2.1x faster |
+| Memory with 11 tabs (MB, app + children) | 592 | 101 | 5.9x less |
+| Child processes | 3 | 1 | language servers start on demand |
+| Typing latency, average (ms) | 13.7 | 3.3 | 4.2x faster |
+| Typing latency, 95th percentile (ms) | 44.1 | 6.0 | 7.4x faster |
+
+Where the gains come from:
+- Highlighting tracks token positions instead of searching the line for each token, and files are no longer highlighted twice on open.
+- Language servers start on the first Ctrl+Space instead of at file open, and the full text is sent then, not on every keystroke.
+- All editors share one background event loop.
+- Extensions are discovered at startup but only imported when an activation event fires.
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:

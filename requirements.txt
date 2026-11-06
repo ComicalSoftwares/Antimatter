@@ -1,0 +1,6 @@
+PyQt6>=6.5
+Pygments>=2.15
+pypresence>=4.3
+pyflakes>=3.0
+python-lsp-server>=1.8
+pyinstaller>=6.0

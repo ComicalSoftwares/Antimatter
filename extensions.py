@@ -7,7 +7,7 @@ import traceback
 import zipfile
 from pathlib import Path
 from PyQt6.QtCore import Qt, QTimer, QUrl
-from PyQt6.QtGui import QAction, QDesktopServices, QKeySequence
+from PyQt6.QtGui import QAction, QDesktopServices, QFontDatabase, QKeySequence
 from PyQt6.QtWidgets import QMessageBox
 
 import languages
@@ -282,6 +282,8 @@ class ExtensionManager:
         for entry in c.get("themes", []):
             theme = themes.load_file(ext.path / entry["path"])
             themes.register(theme, ext.id, entry.get("label"))
+        for entry in c.get("fonts", []):
+            QFontDatabase.addApplicationFont(str(ext.path / entry["path"]))
         for entry in c.get("snippets", []):
             data = json.loads((ext.path / entry["path"]).read_text(encoding="utf-8"))
             table = ext.snippets.setdefault(entry["language"], {})

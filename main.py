@@ -6,8 +6,8 @@ import time
 import shutil
 import threading
 from pathlib import Path
-from PyQt6.QtCore import Qt, QDir, QUrl, QTimer
-from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFileSystemModel, QDesktopServices, QPixmap, QColor
+from PyQt6.QtCore import Qt, QDir, QUrl, QTimer, QByteArray
+from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFileSystemModel, QDesktopServices, QPixmap, QColor, QFontDatabase
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout,
     QTabWidget, QPlainTextEdit,
@@ -23,6 +23,10 @@ import git
 import languages
 import shapes
 import extensions
+import settings
+import motion
+import skin
+import prefs
 import extpanel
 import palette
 import themes
@@ -66,85 +70,18 @@ def discord():
 class AntimatterApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        settings.load()
         themes.load_settings()
+        self._load_font_files()
         self.setObjectName("Comical")
         self.setWindowTitle("Comical Antimatter 2026")
         self.resize(1050, 650)
         
         self.copied_path = None
+        self._closing = False
         self.setDockNestingEnabled(True)
 
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #363636;
-            }
-            QDockWidget {
-                color: #cdd6f4;
-                font-family: 'Consolas', 'Cantarell';
-                font-size: 12px;
-            }
-            QDockWidget::title {
-                background: #2a2a2e;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                padding-left: 8px;
-                padding-top: 4px;
-                padding-bottom: 4px;
-                border-bottom: 1px solid #1e1e1e;
-            }
-            QTreeView {
-                background-color: #1e1e1e;
-                color: #cdd6f4;
-                border: none;
-                font-family: 'Consolas', 'Cantarell';
-                font-size: 12px;
-            }
-            QTreeView::item {
-                border-radius: 6px;
-            }
-            QTreeView::item:hover {
-                background-color: #2a2a2e;
-                border-radius: 6px;
-            }
-            QTreeView::item:selected {
-                background-color: #313244;
-                color: #ffffff;
-                border-radius: 6px;
-            }
-            QScrollBar:vertical {
-                background: #19191a;
-                width: 10px;
-                margin: 0px;
-                border: none;
-                border-radius: 5px;
-            }
-            QScrollBar:horizontal {
-                background: #19191a;
-                height: 10px;
-                margin: 0px;
-                border: none;
-                border-radius: 5px;
-            }
-            QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-                background: #45475a;
-                border-radius: 5px;
-                min-height: 20px;
-                min-width: 20px;
-                border: none;
-            }
-            QScrollBar::handle:hover {
-                background: #585b70;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
-            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
-                background: none;
-                border: none;
-                width: 0px;
-                height: 0px;
-            }
-        """)
+        self.setStyleSheet(skin.main_qss(themes.chrome()))
 
         icon_path = str(BASE_DIR / "AppIcon.png")
         if os.path.exists(icon_path):
@@ -164,7 +101,7 @@ class AntimatterApp(QMainWindow):
 
         # Welcome Screen Widget
         self.welcome_widget = QWidget()
-        self.welcome_widget.setStyleSheet("background-color: #363636;")
+        self.welcome_widget.setStyleSheet(f"background-color: {themes.chrome()['window']};")
         welcome_layout = QVBoxLayout(self.welcome_widget)
         welcome_layout.setContentsMargins(0, 0, 0, 20)
 
@@ -183,6 +120,7 @@ class AntimatterApp(QMainWindow):
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("color: white; font-family: 'Consolas', 'Cantarell'; font-size: 30px; font-weight: bold; background: transparent;")
 
+        self.welcome_title = title_label
         center_container = QWidget()
         center_container.setStyleSheet("background: transparent;")
         center_layout = QVBoxLayout(center_container)
@@ -198,9 +136,11 @@ class AntimatterApp(QMainWindow):
         footer_label = QLabel("Version 1.7 - Alpha")
         footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer_label.setStyleSheet("color: #8a79a3; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
+        self.welcome_footer = footer_label
         footer_label2 = QLabel("This project is open-source and licensed under the MIT license.")
         footer_label2.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer_label2.setStyleSheet("color: white; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
+        self.welcome_footer2 = footer_label2
         welcome_layout.addWidget(footer_label)
         welcome_layout.addWidget(footer_label2)
 
@@ -214,7 +154,7 @@ class AntimatterApp(QMainWindow):
         self.tree = QTreeView()
         self.tree.setModel(self.file_model)
         self.tree.setUniformRowHeights(True)
-        self.tree.setAnimated(False)
+        self.tree.setAnimated(True)
         self.tree.setRootIndex(self.file_model.index(root_path))
         self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._show_tree_context_menu)
@@ -235,7 +175,18 @@ class AntimatterApp(QMainWindow):
         self.sidebar_dock.setAllowedAreas(
             Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
         )
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.sidebar_dock)
+        side = Qt.DockWidgetArea.RightDockWidgetArea if settings.get("sidebar_position") == "right" else Qt.DockWidgetArea.LeftDockWidgetArea
+        self.addDockWidget(side, self.sidebar_dock)
+        self.sidebar_dock.dockLocationChanged.connect(self._on_dock_moved)
+        self._sidebar_toggle_action = QAction("File Manager", self)
+        self._sidebar_toggle_action.setCheckable(True)
+        self._sidebar_toggle_action.setChecked(settings.get("sidebar_visible"))
+        self._sidebar_toggle_action.triggered.connect(lambda: self.toggle_sidebar())
+        self.sidebar_dock.visibilityChanged.connect(self._on_sidebar_visibility)
+        self._save_timer = QTimer(self)
+        self._save_timer.setSingleShot(True)
+        self._save_timer.setInterval(500)
+        self._save_timer.timeout.connect(settings.save)
 
         # Tab bar
         self.tabs = QTabWidget()
@@ -243,7 +194,7 @@ class AntimatterApp(QMainWindow):
         self.tabs.setMovable(True)
         self.tabs.tabCloseRequested.connect(self.close_tab_by_index)
         self.tabs.currentChanged.connect(self._on_tab_changed)
-        self.tabs.setStyleSheet(self._tabs_qss(themes.get()["colors"]["editor.background"]))
+        self.tabs.setStyleSheet(skin.tabs_qss(themes.chrome()))
         self.stack.addWidget(self.tabs)
 
         # Live Terminal Widget Integration
@@ -268,17 +219,22 @@ class AntimatterApp(QMainWindow):
         self.extensions.load_all()
         themes.restore()
         self.apply_theme()
+        settings.observe(self._on_setting_changed)
+
+        geometry = settings.get("window_geometry")
+        if geometry:
+            self.restoreGeometry(QByteArray.fromHex(geometry.encode()))
+        if not settings.get("sidebar_visible"):
+            self.sidebar_dock.hide()
+        else:
+            QTimer.singleShot(0, lambda: self.resizeDocks([self.sidebar_dock], [settings.get("sidebar_width")], Qt.Orientation.Horizontal))
 
         discord()
 
     def _setup_statusbar(self):
         bar = self.statusBar()
         bar.setSizeGripEnabled(False)
-        bar.setStyleSheet("""
-            QStatusBar { background: #363636; color: #a6adc8; font-family: 'Consolas', 'Cantarell'; font-size: 12px; }
-            QStatusBar::item { border: none; }
-            QLabel { background: #2a2a2e; color: #a6adc8; border-radius: 8px; padding: 2px 10px; margin: 2px 3px; }
-        """)
+        bar.setStyleSheet(skin.statusbar_qss(themes.chrome()))
         self.status_pos = QLabel("")
         self.status_lang = QLabel("")
         self.status_enc = QLabel("")
@@ -303,9 +259,79 @@ class AntimatterApp(QMainWindow):
 
     def apply_theme(self):
         theme = themes.get()
-        self.tabs.setStyleSheet(self._tabs_qss(theme["colors"]["editor.background"]))
+        c = themes.chrome(theme)
+        self.setStyleSheet(skin.main_qss(c))
+        self.menuBar().setStyleSheet(skin.menubar_qss(c))
+        self.statusBar().setStyleSheet(skin.statusbar_qss(c))
+        self.tabs.setStyleSheet(skin.tabs_qss(c))
+        self.welcome_widget.setStyleSheet(f"background-color: {c['window']};")
+        self.welcome_title.setStyleSheet(f"color: {c['text']}; font-family: 'Consolas', 'Cantarell'; font-size: 30px; font-weight: bold; background: transparent;")
+        self.welcome_footer.setStyleSheet(f"color: {c['accent_hover']}; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
+        self.welcome_footer2.setStyleSheet(f"color: {c['text']}; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
+        self.terminal_widget.apply_theme(c)
+        shapes.apply_chrome()
+        self._style_tab_buttons()
         for editor in self.tabs_data:
             editor.apply_theme(theme)
+
+    def _style_tab_buttons(self):
+        qss = skin.close_button_qss(themes.chrome())
+        bar = self.tabs.tabBar()
+        for index in range(self.tabs.count()):
+            button = bar.tabButton(index, bar.ButtonPosition.RightSide)
+            if button is not None:
+                button.setStyleSheet(qss)
+
+    def _load_font_files(self):
+        for path in settings.get("font_files"):
+            self.register_font_file(path)
+
+    def register_font_file(self, path):
+        font_id = QFontDatabase.addApplicationFont(path)
+        return QFontDatabase.applicationFontFamilies(font_id) if font_id != -1 else []
+
+    def apply_settings(self):
+        for editor in self.tabs_data:
+            editor.text.apply_settings()
+        self.terminal_widget.apply_theme(themes.chrome())
+
+    def _on_setting_changed(self, key, value):
+        if key == "sidebar_position":
+            self._move_sidebar("right" if value == "right" else "left")
+        elif key == "sidebar_visible":
+            if bool(value) != self.sidebar_dock.isVisible():
+                self.toggle_sidebar(bool(value))
+        elif key in ("font_family", "font_size", "tab_size", "word_wrap", "highlight_current_line", "smooth_scrolling") or key is None:
+            self.apply_settings()
+            if key is None:
+                self._move_sidebar(settings.get("sidebar_position"))
+
+    def _move_sidebar(self, position):
+        area = Qt.DockWidgetArea.RightDockWidgetArea if position == "right" else Qt.DockWidgetArea.LeftDockWidgetArea
+        if self.dockWidgetArea(self.sidebar_dock) != area:
+            self.addDockWidget(area, self.sidebar_dock)
+            self.sidebar_dock.show()
+            QTimer.singleShot(0, lambda: self.resizeDocks([self.sidebar_dock], [settings.get("sidebar_width")], Qt.Orientation.Horizontal))
+            motion.fade_in(self.sidebar_dock, 260)
+
+    def _on_dock_moved(self, area):
+        position = "right" if area == Qt.DockWidgetArea.RightDockWidgetArea else "left"
+        settings.set("sidebar_position", position)
+
+    def _on_sidebar_visibility(self, visible):
+        if not self.isVisible() or self._closing:
+            return
+        self._sidebar_toggle_action.setChecked(visible)
+        settings.set("sidebar_visible", visible)
+
+    def _on_zoom(self, size):
+        settings.set("font_size", size, persist=False)
+        self._save_timer.start()
+        self.apply_settings()
+
+    def show_preferences(self):
+        dialog = prefs.PreferencesDialog(self)
+        dialog.exec()
 
     def choose_theme(self):
         items = [{"title": name} for name in themes.names()]
@@ -330,6 +356,11 @@ class AntimatterApp(QMainWindow):
             ("View: Toggle Terminal", self.toggle_terminal, "Ctrl+T"),
             ("View: Toggle Sidebar", self.toggle_sidebar, "Ctrl+B"),
             ("View: Color Theme", self.choose_theme, "Ctrl+K Ctrl+T"),
+            ("Preferences: Open Settings", self.show_preferences, "Ctrl+,"),
+            ("Preferences: Move Sidebar to the Left", lambda: settings.set("sidebar_position", "left"), ""),
+            ("Preferences: Move Sidebar to the Right", lambda: settings.set("sidebar_position", "right"), ""),
+            ("Preferences: Toggle Animations", lambda: settings.set("animations", not settings.get("animations")), ""),
+            ("Preferences: Toggle Word Wrap", lambda: settings.set("word_wrap", not settings.get("word_wrap")), ""),
             ("Task: Run", self.Drun, "F5"),
             ("Task: Find Issues", self.issues, "Ctrl+I"),
             ("Task: Build Project", task.compile, "Ctrl+F5"),
@@ -373,46 +404,6 @@ class AntimatterApp(QMainWindow):
             QMessageBox.information(self, "Install extension", f"Installed {ext_id}")
         except Exception as e:
             QMessageBox.critical(self, "Install extension", f"Could not install the extension:\n{e}")
-
-    def _tabs_qss(self, bg):
-        return """
-            QTabWidget::pane {
-                border: none;
-                background: @BG@;
-            }
-            QTabBar {
-                background: #363636;
-            }
-            QTabBar::tab {
-                background: #363636;
-                color: #a6adc8;
-                padding: 7px 12px;
-                font-family: 'Consolas', 'Cantarell';
-                font-size: 13px;
-                border: none;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                margin-right: 2px;
-            }
-            QTabBar::tab:selected {
-                background: @BG@;
-                color: #cdd6f4;
-            }
-            QTabBar::close-button {
-                image: none;
-                subcontrol-position: right;
-                width: 14px;
-                height: 14px;
-            }
-            QTabBar::tab:selected QTabBar::close-button {
-                background: #f38ba8;
-                border-radius: 7px;
-            }
-            QTabBar::tab:hover QTabBar::close-button {
-                background: #f38ba8;
-                border-radius: 7px;
-            }
-""".replace("@BG@", bg)
 
     def _show_tree_context_menu(self, position):
         index = self.tree.indexAt(position)
@@ -611,11 +602,7 @@ class AntimatterApp(QMainWindow):
 
     def _setup_menubar(self):
         menubar = self.menuBar()
-        menubar.setStyleSheet("""
-            QMenuBar { background-color: #363636; color: #cdd6f4; }
-            QMenuBar::item { border-radius: 6px; padding: 4px 8px; }
-            QMenuBar::item:selected { background-color: #5400ba; }
-        """)
+        menubar.setStyleSheet(skin.menubar_qss(themes.chrome()))
 
         file_menu = shapes.round_menu(menubar.addMenu("File"))
         file_menu.addAction("New File", self.new_file)
@@ -624,10 +611,12 @@ class AntimatterApp(QMainWindow):
         file_menu.addAction("Save", self.save_file)
         file_menu.addAction("Save As", self.save_file_as)
         file_menu.addSeparator()
+        file_menu.addAction("Preferences...", self.show_preferences)
+        file_menu.addSeparator()
         file_menu.addAction("Close current Tab", self.close_current_tab)
 
         view_menu = shapes.round_menu(menubar.addMenu("View"))
-        view_menu.addAction(self.sidebar_dock.toggleViewAction())
+        view_menu.addAction(self._sidebar_toggle_action)
         view_menu.addAction("Toggle Terminal/Code view", self.toggle_terminal)
 
         task_menu = shapes.round_menu(menubar.addMenu("Task"))
@@ -667,6 +656,7 @@ class AntimatterApp(QMainWindow):
             ("F1", self.show_palette),
             ("Ctrl+Shift+X", self.show_extensions_panel),
             ("Ctrl+K, Ctrl+T", self.choose_theme),
+            ("Ctrl+,", self.show_preferences),
         ]
         for seq, fn in binds:
             action = QAction(self)
@@ -674,11 +664,18 @@ class AntimatterApp(QMainWindow):
             action.triggered.connect(fn)
             self.addAction(action)
 
-    def toggle_sidebar(self):
-        if self.sidebar_dock.isVisible():
-            self.sidebar_dock.hide()
-        else:
-            self.sidebar_dock.show()
+    def toggle_sidebar(self, show=None):
+        visible = self.sidebar_dock.isVisible()
+        show = (not visible) if show is None else show
+        if show == visible:
+            return
+        if visible and self.sidebar_dock.width() >= 150:
+            settings.set("sidebar_width", self.sidebar_dock.width(), persist=False)
+        width = settings.get("sidebar_width")
+        motion.animate_dock(
+            self.sidebar_dock, show, width,
+            lambda: self.resizeDocks([self.sidebar_dock], [width], Qt.Orientation.Horizontal) if show else None
+        )
 
     def get_current_editor(self):
         widget = self.tabs.currentWidget()
@@ -704,20 +701,7 @@ class AntimatterApp(QMainWindow):
         
         close_btn = QPushButton("×")
         close_btn.setFixedSize(20, 20)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: white;
-                border: none;
-                font-weight: bold;
-                font-size: 13px;
-                margin-left: 0px;
-                border-radius: 10px;
-            }
-            QPushButton:hover {
-                color: #d6544b;
-            }
-        """)
+        close_btn.setStyleSheet(skin.close_button_qss(themes.chrome()))
         close_btn.clicked.connect(lambda: self.close_tab_by_widget(editor))
         self.tabs.tabBar().setTabButton(index, self.tabs.tabBar().ButtonPosition.RightSide, close_btn)
 
@@ -730,6 +714,7 @@ class AntimatterApp(QMainWindow):
             "newline": "\n"
         }
 
+        editor.text.zoomed.connect(self._on_zoom)
         editor.text.cursorPositionChanged.connect(
             lambda: self._update_status() if self.get_current_editor() is editor else None
         )
@@ -744,6 +729,7 @@ class AntimatterApp(QMainWindow):
             self.stack.setCurrentIndex(1)
             shapes.fade_in(self.tabs, 220)
         self.tabs.setCurrentIndex(index)
+        self._update_status()
         return editor
 
     def mark_tab_modified(self, editor):
@@ -766,7 +752,8 @@ class AntimatterApp(QMainWindow):
         self._update_status()
         if not editor:
             return
-        shapes.fade_in(editor, 140)
+        if editor.text.blockCount() < 6000:
+            shapes.fade_in(editor, 220)
         path = self.tabs_data[editor]["path"]
 
         if path:
@@ -957,6 +944,11 @@ class AntimatterApp(QMainWindow):
             if not self._confirm_close(widget):
                 event.ignore()
                 return
+        self._closing = True
+        if self.sidebar_dock.isVisible() and self.sidebar_dock.width() >= 150:
+            settings.set("sidebar_width", self.sidebar_dock.width(), persist=False)
+        settings.set("window_geometry", bytes(self.saveGeometry().toHex()).decode(), persist=False)
+        settings.save()
         for widget in list(self.tabs_data):
             widget.shutdown()
         self.terminal_widget.shutdown()

@@ -10,10 +10,11 @@ import languages
 import lsp
 from lsp import LspClient
 import git
+import motion
+import settings
 import shapes
 import themes
 
-INDENT = "    "
 WORD_RE = re.compile(r"[A-Za-z0-9_]+$")
 STRING_PREFIX = {1: "'''", 2: '"""'}
 _MISSING = object()
@@ -165,23 +166,30 @@ class PythonHighlighter(QSyntaxHighlighter):
                 self.setFormat(start, length, fmt)
 
 class AntimatterTextEdit(QPlainTextEdit):
+    zoomed = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.font_family = "Consolas"
-        self.font_size = 13
+        self.font_family = settings.get("font_family")
+        self.font_size = settings.get("font_size")
+        self.tab_size = settings.get("tab_size")
+        self.smooth_scroll = settings.get("smooth_scrolling")
+        self.line_highlight = settings.get("highlight_current_line")
         self.auto_indent_colon = True
         self.language_id = "python"
         self.snippet_lookup = None
         self.colors = dict(themes.get()["colors"])
 
-        self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        self.setLineWrapMode(
+            QPlainTextEdit.LineWrapMode.WidgetWidth if settings.get("word_wrap") else QPlainTextEdit.LineWrapMode.NoWrap
+        )
         self._apply_font()
         self._apply_colors()
 
         self._scroll_target = 0
         self._scroll_anim = QPropertyAnimation(self.verticalScrollBar(), b"value", self)
-        self._scroll_anim.setDuration(130)
-        self._scroll_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._scroll_anim.setDuration(170)
+        self._scroll_anim.setEasingCurve(QEasingCurve.Type.OutQuint)
         self.verticalScrollBar().sliderPressed.connect(self._scroll_anim.stop)
         self.cursorPositionChanged.connect(self._highlight_current_line)
 
@@ -210,6 +218,12 @@ class AntimatterTextEdit(QPlainTextEdit):
         self.line_number_area.update()
 
     def _highlight_current_line(self):
+        if not self.line_highlight:
+            self.setExtraSelections([])
+            area = getattr(self, "line_number_area", None)
+            if area is not None:
+                area.update()
+            return
         selection = QTextEdit.ExtraSelection()
         selection.format.setBackground(QColor(self.colors["editor.lineHighlightBackground"]))
         selection.format.setProperty(QTextFormat.Property.FullWidthSelection, True)
@@ -235,9 +249,31 @@ class AntimatterTextEdit(QPlainTextEdit):
         cursor.endEditBlock()
         self.setTextCursor(cursor)
 
+    @property
+    def indent(self):
+        return " " * self.tab_size
+
+    def apply_settings(self):
+        self.font_family = settings.get("font_family")
+        self.font_size = settings.get("font_size")
+        self.tab_size = settings.get("tab_size")
+        self.smooth_scroll = settings.get("smooth_scrolling")
+        self.line_highlight = settings.get("highlight_current_line")
+        self.setLineWrapMode(
+            QPlainTextEdit.LineWrapMode.WidgetWidth if settings.get("word_wrap") else QPlainTextEdit.LineWrapMode.NoWrap
+        )
+        self._apply_font()
+        self._highlight_current_line()
+        self.update_line_number_area_width(0)
+        self.line_number_area.update()
+
     def _apply_font(self):
-        self.setFont(QFont(self.font_family, self.font_size))
-        self.setTabStopDistance(self.fontMetrics().horizontalAdvance(" ") * len(INDENT))
+        font = QFont()
+        font.setFamilies([self.font_family, "Consolas", "Cantarell", "monospace"])
+        font.setStyleHint(QFont.StyleHint.Monospace)
+        font.setPointSize(self.font_size)
+        self.setFont(font)
+        self.setTabStopDistance(self.fontMetrics().horizontalAdvance(" ") * self.tab_size)
 
     def _shift_lines(self, dedent):
         cursor = self.textCursor()
@@ -256,7 +292,7 @@ class AntimatterTextEdit(QPlainTextEdit):
             text = block.text()
             if dedent:
                 count = 0
-                while count < len(INDENT) and count < len(text) and text[count] == " ":
+                while count < self.tab_size and count < len(text) and text[count] == " ":
                     count += 1
                 if count == 0 and text.startswith("\t"):
                     count = 1
@@ -264,7 +300,7 @@ class AntimatterTextEdit(QPlainTextEdit):
                     edit.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, count)
                     edit.removeSelectedText()
             elif text.strip():
-                edit.insertText(INDENT)
+                edit.insertText(self.indent)
             block = block.next()
         cursor.endEditBlock()
         self.setTextCursor(cursor)
@@ -287,7 +323,7 @@ class AntimatterTextEdit(QPlainTextEdit):
                     if body is not None:
                         self._insert_snippet(body, len(match.group()))
                         return
-            spaces_to_insert = len(INDENT) - (col % len(INDENT))
+            spaces_to_insert = self.tab_size - (col % self.tab_size)
             cursor.insertText(" " * spaces_to_insert)
             return
 
@@ -301,7 +337,7 @@ class AntimatterTextEdit(QPlainTextEdit):
             stripped = before.lstrip(" \t")
             indent = before[:len(before) - len(stripped)]
             if self.auto_indent_colon and stripped.rstrip().endswith(":"):
-                indent += INDENT
+                indent += self.indent
             cursor.beginEditBlock()
             cursor.insertBlock()
             cursor.insertText(indent)
@@ -316,7 +352,7 @@ class AntimatterTextEdit(QPlainTextEdit):
                 col = cursor.positionInBlock()
                 prefix = cursor.block().text()[:col]
                 if prefix and not prefix.strip(" "):
-                    spaces_to_delete = col % len(INDENT) or len(INDENT)
+                    spaces_to_delete = col % self.tab_size or self.tab_size
                     cursor.setPosition(cursor.position() - spaces_to_delete, QTextCursor.MoveMode.KeepAnchor)
                     cursor.removeSelectedText()
                     return
@@ -387,8 +423,9 @@ class AntimatterTextEdit(QPlainTextEdit):
             self._apply_font()
             self.update_line_number_area_width(0)
             self.line_number_area.update()
+            self.zoomed.emit(self.font_size)
             event.accept()
-        elif event.angleDelta().y() and not event.pixelDelta().y() and not event.modifiers():
+        elif self.smooth_scroll and motion.enabled() and event.angleDelta().y() and not event.pixelDelta().y() and not event.modifiers():
             bar = self.verticalScrollBar()
             base = self._scroll_target if self._scroll_anim.state() == QPropertyAnimation.State.Running else bar.value()
             target = int(max(bar.minimum(), min(bar.maximum(), round(base - event.angleDelta().y() / 120 * 3))))
@@ -584,7 +621,7 @@ class AntimatterEditor(QFrame):
 
         cursor_rect = self.text.cursorRect()
         popup.move(self.text.viewport().mapToGlobal(cursor_rect.bottomLeft()))
-        shapes.fade_window(popup, 110)
+        motion.pop_in(popup, 300, 10, 2.0)
 
         popup.itemClicked.connect(lambda item: self._apply_completion(popup.row(item)))
         self.comp_popup = popup

@@ -1,5 +1,7 @@
 import codecs
 import platform
+import settings
+import themes
 from PyQt6.QtCore import QProcess, Qt
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPlainTextEdit, QLineEdit
 from PyQt6.QtGui import QTextCursor
@@ -79,6 +81,15 @@ class AntimatterTerminal(QWidget):
             self.output_box.moveCursor(QTextCursor.MoveOperation.End)
             self.output_box.insertPlainText(data)
             self.output_box.moveCursor(QTextCursor.MoveOperation.End)
+
+    def apply_theme(self, c):
+        family = settings.get("font_family")
+        self.output_box.setStyleSheet(
+            f"background-color: {c['bg']}; color: {c['fg']}; border: none; border-top-left-radius: 10px; border-top-right-radius: 10px; font-family: '{family}', 'Consolas', 'Cantarell'; font-size: 14px;"
+        )
+        self.term_entry.setStyleSheet(
+            f"background-color: {c['bg']}; color: {c['text']}; border: none; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; padding: 4px 8px; font-family: '{family}', 'Consolas', 'Cantarell'; font-size: 14px;"
+        )
 
     def set_focus(self):
         self.term_entry.setFocus()

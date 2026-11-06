@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 
-SETTINGS_FILE = Path.home() / ".antimatter" / "settings.json"
+import settings
+
 DEFAULT_NAME = "Antimatter Dark"
 
 DEFAULT = {
@@ -26,6 +26,19 @@ DEFAULT = {
         "number": "#d19a66",
         "comment": "#5c6370",
         "operator": "#56b6c2",
+    },
+    "chrome": {
+        "window": "#363636",
+        "surface": "#2a2a2e",
+        "sidebar": "#1e1e1e",
+        "select": "#313244",
+        "handle": "#45475a",
+        "handle_hover": "#585b70",
+        "text": "#cdd6f4",
+        "muted": "#6c7086",
+        "popup": "#181825",
+        "input": "#1e1e2e",
+        "border": "#313244",
     },
 }
 
@@ -59,6 +72,7 @@ def _normalize(raw):
         "type": raw.get("type", "dark"),
         "colors": dict(DEFAULT["colors"]),
         "tokenColors": dict(DEFAULT["tokenColors"]),
+        "chrome": {k: v for k, v in raw.get("chrome", {}).items() if isinstance(v, str)},
     }
     if raw.get("type") == "light":
         theme["colors"].update({
@@ -135,10 +149,7 @@ def set_current(name, persist=True):
 
 def load_settings():
     global _saved
-    try:
-        _saved = json.loads(SETTINGS_FILE.read_text(encoding="utf-8")).get("theme", DEFAULT_NAME)
-    except Exception:
-        _saved = DEFAULT_NAME
+    _saved = settings.get("theme")
 
 
 def restore():
@@ -149,14 +160,49 @@ def restore():
 
 
 def save_settings():
-    try:
-        SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        data = {}
-        try:
-            data = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-        data["theme"] = _saved
-        SETTINGS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    except Exception as e:
-        print(f"[Themes] Could not save settings: {e}")
+    settings.set("theme", _saved)
+
+
+def _hex(color):
+    color = color.lstrip("#")
+    return tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def mix(a, b, amount):
+    ra, rb = _hex(a), _hex(b)
+    return "#%02x%02x%02x" % tuple(round(x + (y - x) * amount) for x, y in zip(ra, rb))
+
+
+def is_dark(color):
+    r, g, b = _hex(color)
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 140
+
+
+def chrome(theme=None):
+    theme = theme or get()
+    colors = theme["colors"]
+    bg = colors["editor.background"][:7]
+    fg = colors["editor.foreground"][:7]
+    dark = is_dark(bg)
+    derived = {
+        "window": mix(bg, fg, 0.17),
+        "surface": mix(bg, fg, 0.10),
+        "sidebar": mix(bg, fg, 0.04),
+        "select": mix(bg, fg, 0.20),
+        "handle": mix(bg, fg, 0.25),
+        "handle_hover": mix(bg, fg, 0.36),
+        "text": mix(bg, fg, 0.90),
+        "muted": mix(bg, fg, 0.50),
+        "popup": mix(bg, fg, 0.03),
+        "input": mix(bg, fg, 0.07),
+        "border": mix(bg, fg, 0.16),
+    }
+    derived.update(theme.get("chrome", {}))
+    derived["bg"] = bg
+    derived["fg"] = fg
+    derived["dark"] = dark
+    derived["accent"] = colors.get("accent", "#5400ba")
+    derived["accent_hover"] = mix(derived["accent"], "#ffffff", 0.18)
+    derived["select_text"] = "#ffffff" if dark else fg
+    derived["danger"] = "#f38ba8" if dark else "#d73a49"
+    return derived

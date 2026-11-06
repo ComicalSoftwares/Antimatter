@@ -5,7 +5,9 @@ from PyQt6.QtWidgets import (
     QStyledItemDelegate, QVBoxLayout
 )
 
-import shapes
+import motion
+import skin
+import themes
 
 KEY_ROLE = Qt.ItemDataRole.UserRole + 1
 DATA_ROLE = Qt.ItemDataRole.UserRole
@@ -36,18 +38,19 @@ def match_score(query, text):
 class _Delegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         painter.save()
+        c = themes.chrome()
         rect = option.rect.adjusted(4, 1, -4, -1)
         if option.state & QStyle.StateFlag.State_Selected:
             painter.setRenderHint(painter.RenderHint.Antialiasing)
-            painter.setBrush(QColor("#313244"))
+            painter.setBrush(QColor(c["select"]))
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.drawRoundedRect(rect, 7, 7)
+            painter.drawRoundedRect(rect, 9, 9)
         text_rect = rect.adjusted(10, 0, -10, 0)
         key = index.data(KEY_ROLE)
         if key:
-            painter.setPen(QColor("#6c7086"))
+            painter.setPen(QColor(c["muted"]))
             painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight, key)
-        painter.setPen(QColor("#ffffff") if option.state & QStyle.StateFlag.State_Selected else QColor("#cdd6f4"))
+        painter.setPen(QColor(c["select_text"]) if option.state & QStyle.StateFlag.State_Selected else QColor(c["text"]))
         painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, index.data(Qt.ItemDataRole.DisplayRole))
         painter.restore()
 
@@ -68,13 +71,7 @@ class QuickPick(QDialog):
         outer.setContentsMargins(0, 0, 0, 0)
         frame = QFrame(self)
         frame.setObjectName("pick")
-        frame.setStyleSheet("""
-            QFrame#pick { background-color: #181825; border: 1px solid #313244; border-radius: 12px; }
-            QLineEdit { background-color: #1e1e2e; color: #cdd6f4; border: 1px solid #313244; border-radius: 8px;
-                        padding: 7px 10px; font-family: 'Consolas', 'Cantarell'; font-size: 14px; }
-            QLineEdit:focus { border: 1px solid #5400ba; }
-            QListWidget { background: transparent; border: none; outline: none; font-family: 'Consolas', 'Cantarell'; font-size: 13px; }
-        """)
+        frame.setStyleSheet(skin.pick_qss(themes.chrome()))
         outer.addWidget(frame)
         layout = QVBoxLayout(frame)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -145,5 +142,5 @@ class QuickPick(QDialog):
             geo = parent.geometry()
             self.move(geo.x() + (geo.width() - self.width()) // 2, geo.y() + 70)
         self.show()
-        shapes.fade_window(self, 120)
+        motion.pop_in(self, 360, 20, 2.4)
         self.entry.setFocus()
