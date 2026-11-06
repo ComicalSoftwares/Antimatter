@@ -4,7 +4,7 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
-  <name>Funtastic</name>
+  <name>Antimatter</name>
   <summary>A blazing fast Python IDE</summary>
   <description>
     <p>
@@ -54,7 +54,7 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/ComicalSoftwares/Funtastic/main/screenshots/LightMenu.png</image>
+      <image>https://private-user-images.githubusercontent.com/166249695/672557836-459266d2-c7c0-4cbb-85a4-46940d4834b2.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3OTM5OTUxNzEsIm5iZiI6MTc5Mzk5NDg3MSwicGF0aCI6Ii8xNjYyNDk2OTUvNjcyNTU3ODM2LTQ1OTI2NmQyLWM3YzAtNGNiYi04NWE0LTQ2OTQwZDQ4MzRiMi5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjYxMTA2JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MTEwNlQxOTU0MzFaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1iYzg0MWVkNGUyYTYxMjU2OGE0NzEwMzIxMmY4Nzk0MWE5ZTUwM2FmNDY5NDgyMGQ2NThhMDcxMzUwZTg4ODIxJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZyZXNwb25zZS1jb250ZW50LXR5cGU9aW1hZ2UlMkZwbmcifQ.r5--T_uXMWtSJRVxXzT7aVUoHt2zFZ9dUC5TmpgLzBg.png</image>
       <caption>Screenshot of the welcome screen</caption>
     </screenshot>
   </screenshots>
