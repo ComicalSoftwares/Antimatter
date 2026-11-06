@@ -4,5 +4,5 @@ Exec=antimatter
 Icon=io.github.comicalsoftwares.antimatter
 Terminal=false
 Type=Application
-Categories=Utility;Programming;Code
+Categories=Utility;Programming;
 Keywords=Python;python;py
