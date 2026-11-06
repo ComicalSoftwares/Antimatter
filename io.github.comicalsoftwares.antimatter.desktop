@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Comical Antimatter
+Exec=antimatter
+Icon=AppIcon
+Terminal=false
+Type=Application
+Categories=Utility;Programming;Code
+Keywords=Python;python;py

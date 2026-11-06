@@ -2,3 +2,4 @@ pyflakes
 pypresence
 pygments
 Pillow
+pybind11
