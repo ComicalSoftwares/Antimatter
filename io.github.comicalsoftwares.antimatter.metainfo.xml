@@ -10,7 +10,7 @@
     <p>
         Antimatter is a Python IDE designed to run smoothly on any hardware without the bloat of the other big/popular IDEs.
     </p>
-</description>
+  </description>
 
   <developer id="io.github.comicalsoftwares">
     <name>Comical</name>
@@ -68,10 +68,9 @@
           <li>Code viewer now supports Markdown syntax highlighting</li>
           <li>Terminal module is now improved and is much more smoother</li>
           <li>Added "Open folder.." function</li>
-          <li>..and much more awaits ;)</li>
+          <li>..and much more ;)</li>
         </ul>
       </description>
     </release>
   </releases>
-
 </component>
