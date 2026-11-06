@@ -7,11 +7,16 @@ def add():
     project_dir = QFileDialog.getExistingDirectory(None, "Select project folder")
     if not project_dir:
         return
+
+    files, ok = QInputDialog.getText(None, "Specify the files to stage (Git add)", "Enter the name of the files that you wish to stage (e.g. main.py test.c):")
+    if not ok or not files:
+        return
+    
     try:
-        subprocess.run("git add .", cwd=project_dir, shell=True, check=True)
-        QMessageBox.information(None, "Git action successful", "Action 'git add .' completed successfully")
+        subprocess.run(f"git add {files}", cwd=project_dir, shell=True, check=True, text=True)
+        QMessageBox.information(None, "Git action successful", f"Action 'git add {files}' completed successfully")
     except Exception as e:
-        QMessageBox.critical(None, "Git action unsuccessful", f"Action 'git add .' couldn't be completed for the following reason: {e}")
+        QMessageBox.critical(None, "Git action unsuccessful", f"Action 'git add {files}' couldn't be completed for the following reason: {e}")
 
 def commit():
     project_dir = QFileDialog.getExistingDirectory(None, "Select current working directory")
@@ -23,8 +28,7 @@ def commit():
         return
 
     try:
-        subprocess.run("git add .", cwd=project_dir, shell=True, check=True)
-        subprocess.run(f'git commit -m "{message}"', cwd=project_dir, shell=True, check=True)
+        subprocess.run(f'git commit -m "{message}"', cwd=project_dir, shell=True, check=True, text=True)
         QMessageBox.information(None, "Git action successful", f'''Action 'git commit -m "{message}"' completed successfully''')
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git commit -m "{message}"' couldn't be completed for the following reason: {e}''')
@@ -39,8 +43,8 @@ def set_repo():
         return
 
     try:
-        subprocess.run("git init", cwd=project_dir, shell=True, check=True)
-        subprocess.run(f'git remote add origin "{url}"', cwd=project_dir, shell=True, check=True)
+        subprocess.run("git init", cwd=project_dir, shell=True, check=True, text=True)
+        subprocess.run(f'git remote add origin "{url}"', cwd=project_dir, shell=True, check=True, text=True)
         QMessageBox.information(None, "Git action successful", f'''Action 'git remote add origin "{url}"' completed successfully''')
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git remote add origin "{url}"' couldn't be completed for the following reason: {e}''')
@@ -55,17 +59,43 @@ def push():
         return
     
     try:
-        subprocess.run(f"git push origin {branch}", cwd=project_dir, shell=True, check=True)
+        subprocess.run(f"git push origin {branch}", cwd=project_dir, shell=True, check=True, text=True)
         QMessageBox.information(None, "Git action successful", "Changes pushed to remote repository successfully!")
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f"Push couldn't be completed for the following reason: {e}")
+
+def clone():
+    project_dir = QFileDialog.getExistingDirectory(None, "Select parent destination folder")
+    if not project_dir:
+        return
+
+    url, ok = QInputDialog.getText(None, "Enter repository URL", "Enter the remote repository's URL:")
+    if not ok or not url:
+        return
+
+    try:
+        subprocess.run(f'git clone "{url}"', cwd=project_dir, shell=True, check=True, text=True)
+        QMessageBox.information(None, "Git action successful", f'''Action 'git clone "{url}"' completed successfully''')
+    except Exception as e:
+        QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git clone "{url}"' couldn't be completed for the following reason: {e}''')
+
+def sync():
+    project_dir = QFileDialog.getExistingDirectory(None, "Select the folder where your repository lives")
+    if not project_dir:
+        return
+
+    try:
+        subprocess.run(f'git pull', cwd=project_dir, shell=True, check=True, text=True)
+        QMessageBox.information(None, "Git action successful", f'''Sync action via 'git pull' completed successfully''')
+    except Exception as e:
+        QMessageBox.critical(None, "Git action unsuccessful", f'''Sync action via 'git pull"' couldn't be completed for the following reason: {e}''')
 
 
 def _show_text_dialog(title, content):
     dlg = QDialog()
     dlg.resize(650, 450)
     dlg.setWindowTitle(title)
-    dlg.setStyleSheet("background-color: #181825; color: #cdd6f4;")
+    dlg.setStyleSheet("background-color: #363636; color: purple;")
     layout = QVBoxLayout(dlg)
     
     edit = QPlainTextEdit(dlg)
@@ -73,11 +103,12 @@ def _show_text_dialog(title, content):
     edit.setReadOnly(True)
     edit.setStyleSheet("""
         QPlainTextEdit {
-            background-color: #1e1e2e;
+            background-color: #19191a;
             color: #cdd6f4;
             border: 1px solid #313244;
             font-family: Consolas;
             font-size: 12px;
+            border-radius: 7px;
         }
         QScrollBar:vertical {
             background: #19191a;
@@ -116,7 +147,7 @@ def _show_text_dialog(title, content):
     btn = QPushButton("Close", dlg)
     btn.setStyleSheet("""
         QPushButton {
-            background-color: #313244;
+            background-color: #1f1f1f;
             color: #cdd6f4;
             border: none;
             padding: 6px 12px;
@@ -148,7 +179,7 @@ def show_file_diff(file_path):
 
 def show_file_blame(file_path):
     if not file_path or not os.path.exists(file_path):
-        _show_text_dialog("Git Blame Error", "File path does not exist.")
+        _show_text_dialog("Git Blame Error", "File doesn't exist.")
         return
     root_dir = os.path.dirname(os.path.abspath(file_path))
     rel_path = os.path.relpath(file_path, root_dir)
@@ -173,6 +204,6 @@ def get_status(file_path):
             cwd=root_dir, shell=True, capture_output=True, text=True, check=True
         )
         output = result.stdout if result.stdout else "Working tree clean. No uncommitted files."
-        _show_text_dialog("Uncommitted Files (Git Status)", output)
+        _show_text_dialog("Git Status", output)
     except Exception as e:
         _show_text_dialog("Git Status Error", str(e))

@@ -447,35 +447,36 @@ class AntimatterApp(QMainWindow):
         """)
 
         file_menu = menubar.addMenu("File")
-        file_menu.addAction("New File", self.new_file)
-        file_menu.addAction("Open File", self.open_file)
+        file_menu.addAction("New File\tCtrl + N", self.new_file)
+        file_menu.addAction("Open File\tCtrl + O", self.open_file)
         file_menu.addAction("Open Folder...", self.open_project_folder)
-        file_menu.addAction("Save", self.save_file)
-        file_menu.addAction("Save As", self.save_file_as)
+        file_menu.addAction("Save\tCtrl + S", self.save_file)
+        file_menu.addAction("Save As\tCtrl + Shift + S", self.save_file_as)
         file_menu.addSeparator()
-        file_menu.addAction("Close current Tab", self.close_current_tab)
+        file_menu.addAction("Close current Tab\tCtrl + W", self.close_current_tab)
 
         view_menu = menubar.addMenu("View")
         view_menu.addAction(self.sidebar_dock.toggleViewAction())
-        view_menu.addAction("Toggle Terminal/Code view", self.toggle_terminal)
+        view_menu.addAction("Toggle Terminal/Code view\tCtrl + T", self.toggle_terminal)
 
         task_menu = menubar.addMenu("Task")
-        task_menu.addAction("Run", self.Drun)
-        task_menu.addAction("Run with no debugger", task.run)
-        task_menu.addAction("Build project", task.compile)
-        task_menu.addAction("Find issues", self.issues)
+        task_menu.addAction("Run\t F5", self.Drun)
+        task_menu.addAction("Build project\tCtrl + F5", task.compile)
+        task_menu.addAction("Find issues\tCtrl + I", self.issues)
 
         tools_menu = menubar.addMenu("Tools")
-        tools_menu.addAction("Configure Project", util.project)
+        tools_menu.addAction("Set up .venv environment", util.project)
         tools_menu.addAction("Update Antimatter", util.update)
         tools_menu.addAction("Refresh RPC", discord)
 
         git_menu = menubar.addMenu("Git")
-        git_menu.addAction("Connect to a remote git repository", git.set_repo)
+        git_menu.addAction("Add remote repository", git.set_repo)
+        git_menu.addAction("Clone", git.clone)
+        git_menu.addAction("Sync (Pull)", git.sync)
         git_menu.addSeparator()
-        git_menu.addAction("Add all files to commit", git.add)
-        git_menu.addAction("Commit with message", git.commit)
-        git_menu.addAction("Push to remote repository", git.push)
+        git_menu.addAction("Add files (Git add)", git.add)
+        git_menu.addAction("Commit", git.commit)
+        git_menu.addAction("Push", git.push)
         
 
     def _setup_shortcuts(self):
@@ -491,12 +492,20 @@ class AntimatterApp(QMainWindow):
             ("Ctrl+I", self.issues),
             ("Ctrl+T", self.toggle_terminal),
             ("Ctrl+B", self.toggle_sidebar),
+            ("Ctrl+F", lambda: self._ed(lambda ed: ed.open_find(False))),
+            ("Ctrl+R", lambda: self._ed(lambda ed: ed.open_find(True))),
+            ("Ctrl+Shift+P", lambda: self._ed(lambda ed: ed.toggle_preview())),
         ]
         for seq, fn in binds:
             action = QAction(self)
             action.setShortcut(QKeySequence(seq))
             action.triggered.connect(fn)
             self.addAction(action)
+
+    def _ed(self, fn):
+        ed = self.get_current_editor()
+        if ed:
+            fn(ed)
 
     def toggle_sidebar(self):
         if self.sidebar_dock.isVisible():
@@ -518,8 +527,9 @@ class AntimatterApp(QMainWindow):
 
     def create_new_tab(self, title="Untitled", content="", file_path=None):
         editor = codeview.AntimatterEditor()
-        if content:
-            editor.insert("0.0", content)
+        
+        if file_path and hasattr(editor, "set_file_path"):
+            editor.set_file_path(file_path)
 
         index = self.tabs.addTab(editor, title)
         
@@ -547,6 +557,11 @@ class AntimatterApp(QMainWindow):
             "title": title,
             "modified": False
         }
+
+        if content:
+            editor.insert("0.0", content)
+
+        editor.text.document().setModified(False)
 
         editor.text.textChanged.connect(lambda: self.mark_tab_modified(editor))
 
@@ -619,7 +634,7 @@ class AntimatterApp(QMainWindow):
 
     def open_file(self):
         path, _ = QFileDialog.getOpenFileName(
-            self, "Open file", "", "Python (*.py);;Text (*.txt);;All files (*.*)"
+            self, "Open file", "", "Python (*.py);;Markdown (*.md);;Text (*.txt);;All files (*.*)"
         )
         if not path:
             return
@@ -631,7 +646,7 @@ class AntimatterApp(QMainWindow):
             return False
 
         path2, _ = QFileDialog.getSaveFileName(
-            self, "Save file As", "", "Python (*.py);;Text (*.txt);;All files (*.*)"
+            self, "Save file As", "", "Python (*.py);;Markdown (*.md);;Text (*.txt);;All files (*.*)"
         )
         if not path2:
             return False
@@ -648,6 +663,8 @@ class AntimatterApp(QMainWindow):
             self.setWindowTitle(f"{path2} - Comical Antimatter 2026")
             if hasattr(editor, "start_lsp"):
                 editor.start_lsp(path2)
+            if hasattr(editor, "set_file_path"):
+                editor.set_file_path(path2)
             return True
         except Exception as e:
             QMessageBox.critical(self, "Save Error", f"Could not save file:\n{e}")

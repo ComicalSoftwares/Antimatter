@@ -69,7 +69,7 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] Keyboard Shortcuts.
 - [X] Issues finder.
 - [X] Tabs.
-- [ ] LSP and suggestions **(Exists and works but not reliable at the moment)**
+- [ ] LSP and suggestions **(Exists and works but not reliable yet)**
 ### Debugging and managing projects
 - [X] File manager.
 - [X] Live terminal
@@ -81,11 +81,11 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [ ] Modify position of the sidebar (File Manager) **(Exists but it doesn't save the new position)**
 - [ ] Extensions
 ### Git support
-- [ ] Git clone
-- [ ] Git commit
-- [ ] Git Push
-- [ ] Git Sync
-And all of the other essential git functions (whch aren't here yet unfortunately)
+- [X] Git clone
+- [X] Git commit
+- [X] Git Push
+- [X] Git Sync
+And all of the other essential git functions
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:
