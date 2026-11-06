@@ -197,10 +197,14 @@ def show_file_blame(file_path):
 def get_status(file_path):
     if not file_path:
         return
-    root_dir = os.path.dirname(os.path.abspath(file_path))
+    if os.path.isdir(file_path):
+        root_dir = os.path.abspath(file_path)
+    else:
+        root_dir = os.path.dirname(os.path.abspath(file_path))
+        
     try:
         result = subprocess.run(
-            "git status",
+            "git status --porcelain",
             cwd=root_dir, shell=True, capture_output=True, text=True, check=True
         )
         output = result.stdout if result.stdout else "Working tree clean. No uncommitted files."
