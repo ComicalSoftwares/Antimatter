@@ -1,54 +1,37 @@
 {
     "id": "io.github.comicalsoftwares.antimatter",
-
     "runtime": "org.kde.Platform",
-
     "runtime-version": "6.11",
-
     "sdk": "org.kde.Sdk",
-
     "base": "com.riverbankcomputing.PyQt.BaseApp",
-
     "base-version": "6.11",
-
     "command": "antimatter",
     "finish-args": [
         "--share=ipc",
         "--socket=fallback-x11",
         "--socket=wayland",
         "--device=dri",
-        "--filesystem=xdg-run/app/com.discordapp.Discord:create",
-        "--talk-name=org.freedesktop.Flatpak"
+        "--talk-name=org.freedesktop.Flatpak",
+        "--filesystem=xdg-run/app/com.discordapp.Discord:create"
     ],
     "modules": [
         "python3-deps.json",
         {
-    	"name": "git",
-	    "buildsystem": "autotools",
-	    "sources": [
-        	{
-        	"type": "archive",
-        	"url": "https://www.kernel.org/pub/software/scm/git/git-2.56.0.tar.xz",
-        	"sha256": "26c56c296b38c0695b26fa95f475f1d01704d2d38e73465ca30b0b2f5dc789d3"
-        	}
-    		]
-	},
-        {
             "name": "antimatter",
-            "buildsystem" : "simple",
+            "buildsystem": "simple",
             "build-commands": [
-    		"mkdir -p /app/lib/antimatter /app/bin /app/share/applications /app/share/metainfo /app/share/icons/hicolor/512x512/apps",
-    		"cp *.py AppIcon.png /app/lib/antimatter/",
-    		"install -Dm755 wrapper /app/bin/antimatter",
-    		"install -Dm644 io.github.comicalsoftwares.antimatter.desktop /app/share/applications/io.github.comicalsoftwares.antimatter.desktop",
-    		"install -Dm644 io.github.comicalsoftwares.antimatter.metainfo.xml /app/share/metainfo/io.github.comicalsoftwares.antimatter.metainfo.xml",
-    		"install -Dm644 AppIcon.png /app/share/icons/hicolor/512x512/apps/io.github.comicalsoftwares.antimatter.png"
-		],
+                "mkdir -p /app/lib/antimatter /app/bin /app/share/applications /app/share/metainfo /app/share/icons/hicolor/512x512/apps",
+                "cp *.py AppIcon.png /app/lib/antimatter/",
+                "install -Dm755 wrapper /app/bin/antimatter",
+                "install -Dm644 io.github.comicalsoftwares.antimatter.desktop /app/share/applications/io.github.comicalsoftwares.antimatter.desktop",
+                "install -Dm644 io.github.comicalsoftwares.antimatter.metainfo.xml /app/share/metainfo/io.github.comicalsoftwares.antimatter.metainfo.xml",
+                "install -Dm644 AppIcon.png /app/share/icons/hicolor/512x512/apps/io.github.comicalsoftwares.antimatter.png"
+            ],
             "sources": [
                 {
                     "type": "git",
                     "url": "https://github.com/ComicalSoftwares/Antimatter.git",
-                    "commit": "6a815ff0c64936efff815381e6036affb87158dc"
+                    "commit": "0ce670887f958cab2c5955b42f9eae706200b0b8"
                 }
             ]
         }
