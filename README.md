@@ -23,8 +23,8 @@ A modern, lightweight and absurdly optimized Python IDE written in **Python and 
 ## Download today !
 Antimatter is free & open-source ! _(Obviously !)_
 
-### Latest release: Version 1.5 - Alpha
-- **Windows installer**: [antimatter_setup.exe](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.5/antimatter_setup.exe)
+### Latest release: Version 1.6 - Alpha
+- **Windows installer**: [antimatter_setup.exe](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.6/antimatter_setup.exe)
 - **Linux**: Learn how to [build from source.](https://github.com/ComicalSoftwares/Antimatter/wiki/Quick-Start-Guide/#installation)
 
 ## Libraries and ressources used
@@ -72,7 +72,7 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [ ] LSP and suggestions **(Exists and works but not reliable yet)**
 ### Debugging and managing projects
 - [X] File manager.
-- [X] Live terminal
+- [X] Live terminal (Beta, needs work)
 - [X] Running Scripts (With and without debugger)
 ### Customization
 - [ ] Preferences

@@ -61,7 +61,7 @@ class PythonHighlighter(QSyntaxHighlighter):
         f, fmt = self.f, self.setFormat
         pos = 0
         prev = self.previousBlockState()
-        if prev in self.TRIPLE:                       # continuing a triple-quoted string
+        if prev in self.TRIPLE:
             end = text.find(self.TRIPLE[prev])
             if end < 0:
                 fmt(0, len(text), f["str"])
@@ -462,7 +462,6 @@ class AntimatterEditor(QFrame):
             self.highlighter = MarkdownHighlighter(self.text.document())
             self.text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
         else:
-            # Pas de surlignage si ce n'est ni du python ni du markdown
             self.text.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
     def open_find(self, replace=False):
