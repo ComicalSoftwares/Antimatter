@@ -43,7 +43,7 @@
      If this is present, appstreamcli compose will pull icons, keywords and categories from the desktop file. -->
   <launchable type="desktop-id">io.github.comicalsoftwares.funtastic.desktop</launchable>
   <!-- Use the OARS website (https://hughsie.github.io/oars/generate.html) to generate these and make sure to use oars-1.1 -->
-  <content_rating type="oars-1.1">
+  <content_rating type="oars-1.1"></content_rating>
 
 
   <!-- Applications should set a brand color in both light and dark variants like so -->
@@ -57,6 +57,7 @@
       <image>https://raw.githubusercontent.com/ComicalSoftwares/Funtastic/main/screenshots/LightMenu.png</image>
       <caption>Screenshot of the welcome screen</caption>
     </screenshot>
+  </screenshots>
 
   <releases>
     <release version="1.7" date="2026-11-06">
