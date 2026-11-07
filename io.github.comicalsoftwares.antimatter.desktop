@@ -5,5 +5,5 @@ Comment=A simple and lightweight python IDE
 Icon=io.github.comicalsoftwares.antimatter
 Terminal=false
 Type=Application
-Categories=Utility;IDE;DevelopmentProgramming;
+Categories=Utility;IDE;Development;Programming;
 Keywords=Python;python;py

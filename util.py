@@ -22,7 +22,7 @@ def project():
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Couldn't configure project: \n{e}")
     else:
-        QMessageBox.critical(None, "Error", f"Couldn't configure project: \n{e}")
+        QMessageBox.critical(None, "Error", "Couldn't configure project: Invalid Directory")
 
 def docs():
     webbrowser.open("https://antimatter.codelyteam.com/#docs/Quick-Start-Guide")
