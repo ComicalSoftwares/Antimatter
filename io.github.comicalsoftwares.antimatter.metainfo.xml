@@ -66,8 +66,16 @@
 
   <screenshots>
     <screenshot type="default">
-      <image></image>
+      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/welcome.png?raw=true</image>
       <caption>Screenshot of the welcome screen</caption>
+    </screenshot>
+    <screenshot type="default">
+      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/action.png?raw=true</image>
+      <caption>Editing a script</caption>
+    </screenshot>
+    <screenshot type="default">
+      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/term.png?raw=true</image>
+      <caption>Running terminal commands</caption>
     </screenshot>
   </screenshots>
 
