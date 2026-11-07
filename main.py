@@ -34,7 +34,6 @@ RPC = None
 RPC_START_TIME = time.time()
 
 def update_rpc(filename=None, is_file_path=True):
-    #global RPC # Disabled for testing purposes
     if not RPC:
         return
     try:

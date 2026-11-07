@@ -13,6 +13,7 @@
         "--device=dri",
         "--share=network",
         "--talk-name=org.freedesktop.Flatpak",
+        "--filesystem=xdg-run/discord-ipc-*",
         "--filesystem=xdg-run/app/com.discordapp.Discord:create"
     ],
     "modules": [
@@ -32,7 +33,7 @@
                 {
                     "type": "git",
                     "url": "https://github.com/ComicalSoftwares/Antimatter.git",
-                    "commit": "f8d666d61e820c21d78120c786fc092298c93828"
+                    "commit": "ab88c6b3cf42867798d0510e3f4a52be49feaefe"
                 }
             ]
         }
