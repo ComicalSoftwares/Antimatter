@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from PyQt6.QtCore import QSocketNotifier, Qt
 from PyQt6.QtGui import QTextCursor, QTextCharFormat, QColor, QFont
-from PyQt6.QtWidgets import QVBoxLayout, QWidget, QPlainTextEdit
+from PyQt6.QtWidgets import QVBoxLayout, QWidget, QPlainTextEdit, QMenu
 
 def is_sandboxed() -> bool:
     return "FLATPAK_ID" in os.environ or Path("/.flatpak-info").exists()
@@ -34,7 +34,10 @@ class NativeTerminalWidget(QPlainTextEdit):
         self.master_fd = None
         self.notifier = None
         self.current_format = QTextCharFormat()
+        self.prompt_end_position = 0
         self.init_terminal()
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._show_context_menu)
 
     def init_terminal(self):
         if sys.platform == "win32":
@@ -58,7 +61,7 @@ class NativeTerminalWidget(QPlainTextEdit):
                     self.notifier = QSocketNotifier(self.master_fd, QSocketNotifier.Type.Read, self)
                     self.notifier.activated.connect(self.handle_pty_output)
             except Exception as e:
-                self.appendPlainText(f"[Terminal Error] PTY initialization failed: {e}\n")
+                self.appendPlainText(f"[Antimatter Terminal Error] PTY initialization failed: {e}\n")
 
     def handle_pty_output(self, socket):
         try:
@@ -85,7 +88,6 @@ class NativeTerminalWidget(QPlainTextEdit):
             
             osc_seq, csi_seq, params_str, command = match.groups()
             if osc_seq:
-                # Ignore window title / shell integration metadata
                 pass
             elif csi_seq:
                 if command == 'm':
@@ -93,12 +95,15 @@ class NativeTerminalWidget(QPlainTextEdit):
                 elif command == 'J':
                     if params_str in ('2', '2J', '0J', ''):
                         self.clear()
+                        self.prompt_end_position = 0
             
             last_idx = end
 
         if last_idx < len(text):
             self._insert_plain_chunk(cursor, text[last_idx:])
 
+        # Update prompt input boundary
+        self.prompt_end_position = self.document().characterCount() - 1
         self.ensureCursorVisible()
 
     def _insert_plain_chunk(self, cursor, chunk):
@@ -125,7 +130,6 @@ class NativeTerminalWidget(QPlainTextEdit):
         if not params_str:
             params = [0]
         else:
-            # Strip out private question marks if present (e.g. ?25h)
             clean_params = params_str.replace('?', '')
             params = [int(p) if p.isdigit() else 0 for p in clean_params.split(';') if p]
         
@@ -155,6 +159,24 @@ class NativeTerminalWidget(QPlainTextEdit):
         key = event.key()
         text = event.text()
 
+        cursor = self.textCursor()
+
+        # Prevent backspace/delete if nothing is typed or if selection crosses into prompt
+        if key in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+            if cursor.hasSelection() and cursor.selectionStart() < self.prompt_end_position:
+                event.ignore()
+                return
+            if not cursor.hasSelection() and cursor.position() <= self.prompt_end_position:
+                event.ignore()
+                return
+
+        # Snap cursor to end if typing before the prompt area
+        if not cursor.hasSelection() and cursor.position() < self.prompt_end_position:
+            if key not in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down, 
+                           Qt.Key.Key_Home, Qt.Key.Key_End) and not (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                self.setTextCursor(cursor)
+
         if sys.platform == "win32":
             super().keyPressEvent(event)
         else:
@@ -173,7 +195,8 @@ class NativeTerminalWidget(QPlainTextEdit):
                     elif key == Qt.Key.Key_Right:
                         os.write(self.master_fd, b"\x1b[C")
                     elif key == Qt.Key.Key_Left:
-                        os.write(self.master_fd, b"\x1b[D")
+                        if cursor.position() > self.prompt_end_position:
+                            os.write(self.master_fd, b"\x1b[D")
                     elif text:
                         os.write(self.master_fd, text.encode("utf-8"))
                 except OSError:
@@ -185,6 +208,38 @@ class NativeTerminalWidget(QPlainTextEdit):
             os.write(self.master_fd, (cmd + "\n").encode("utf-8"))
         elif sys.platform == "win32" and hasattr(self, "process"):
             self.process.write((cmd + "\n").encode("utf-8"))
+            
+    def _show_context_menu(self, pos):
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #181825;
+                color: #cdd6f4;
+                border: 1px solid #313244;
+            }
+            QMenu::item:selected {
+                background-color: #313244;
+                color: white;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #89b4fa;
+                margin: 4px 8px;
+            }
+        """)
+
+        copy_act = menu.addAction("Copy\tCtrl + C")
+        copy_act.triggered.connect(self.copy)
+        cut_act = menu.addAction("Cut\tCtrl + X")
+        cut_act.triggered.connect(self.cut)
+        paste_act = menu.addAction("Paste\tCtrl + V")
+        paste_act.triggered.connect(self.paste)
+        
+        menu.addSeparator()
+        select_act = menu.addAction("Select All\tCtrl + A")
+        select_act.triggered.connect(self.selectAll)
+
+        menu.exec(self.mapToGlobal(pos))
 
 
 class AntimatterTerminal(QWidget):

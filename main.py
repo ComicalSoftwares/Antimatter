@@ -780,25 +780,28 @@ class AntimatterApp(QMainWindow):
         )
         if path3:
             cmd = f'python "{path3}"' if platform.system() == "Windows" else f"python3 {path3}"
-            if hasattr(self.terminal_widget, "term") and self.terminal_widget.term:
-                self.terminal_widget.term.write((cmd + "\n").encode("utf-8"))
+            if hasattr(self.terminal_widget, "write"):
+                self.terminal_widget.write((cmd + "\n").encode("utf-8"))
             self.terminal_widget.set_focus()
 
+    
+    def is_sandboxed(self) -> bool:
+        return "FLATPAK_ID" in os.environ or Path("/.flatpak-info").exists()
     def issues(self):
-        iss_win = QMainWindow(self)
-        iss_win.resize(700, 400)
-        iss_win.setWindowTitle("Issues - Comical Antimatter")
+        self.iss_win = QMainWindow(self)
+        self.iss_win.resize(700, 400)
+        self.iss_win.setWindowTitle("Issues - Comical Antimatter")
 
-        txt = QPlainTextEdit(iss_win)
+        txt = QPlainTextEdit(self.iss_win)
         txt.setReadOnly(True)
         txt.setStyleSheet("background-color: #19191a; color: #D8DEE9;")
-        iss_win.setCentralWidget(txt)
+        self.iss_win.setCentralWidget(txt)
 
         actual_path = self.get_current_path() or ""
         
         if platform.system() == "Windows":
             Out = subprocess.run(f'%appdata%/Python/Python314/Scripts/pyflakes.exe "{actual_path}"', capture_output=True, text=True, shell=True)
-        elif is_sandboxed():
+        elif self.is_sandboxed():
             Out = subprocess.run(f'flatpak-spawn --host pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
         else:
             Out = subprocess.run(f'pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
@@ -807,11 +810,11 @@ class AntimatterApp(QMainWindow):
         if not output_str.strip():
             txt.setPlainText("[✓]: No issues detected. Looks good !")
         elif output_str.strip() == ": No such file or directory":
-            txt.setPlainText("[!]: Save the file first before exploring issues.")
+            txt.setPlainText("[!]: Open/Save the file first before exploring issues.")
         else:
             txt.setPlainText(f"[!]: Issues with the current file:\n==============================\n{output_str}")
 
-        iss_win.show()
+        self.iss_win.show()
 
     def closeEvent(self, event):
         super().closeEvent(event)

@@ -596,7 +596,6 @@ class AntimatterEditor(QFrame):
             self.comp_popup.close()
 
     # Context Menu for Copy-paste and stuff
-
     def _show_context_menu(self, pos):
         menu = QMenu(self)
         menu.setStyleSheet("""
@@ -646,6 +645,7 @@ class AntimatterEditor(QFrame):
         status_act.triggered.connect(self._show_git_status)
 
         menu.exec(self.text.mapToGlobal(pos))
+
 
     def _show_git_status(self):
         if not self._current_file_path:

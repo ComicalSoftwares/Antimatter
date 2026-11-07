@@ -5,11 +5,20 @@
   <project_license>MIT</project_license>
 
   <name>Antimatter</name>
-  <summary>A blazing fast Python IDE</summary>
+  <summary>Code in Python. Not in Bloat.</summary>
   <description>
     <p>
         Antimatter is a Python IDE designed to run smoothly on any hardware without the bloat of the other big/popular IDEs.
+        This IDE features the following functions:
     </p>
+        <ul>
+          <li>Interactive Terminal Interface</li>
+          <li>Git Support</li>
+          <li>Editing Python/Markdown Files</li>
+          <li></li>
+          <li>Added "Open folder.." function</li>
+          <li>..and much more ;)</li>
+        </ul>
   </description>
 
   <developer id="io.github.comicalsoftwares">
