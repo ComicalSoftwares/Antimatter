@@ -1,4 +1,6 @@
 pyflakes
 pypresence
 pygments
-
+python-lsp-server
+nuitka
+pyinstaller
