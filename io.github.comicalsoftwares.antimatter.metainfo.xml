@@ -8,14 +8,19 @@
   <summary>Code in Python. Not in Bloat.</summary>
   <description>
     <p>
-        Antimatter is a Python IDE designed to run smoothly on any hardware without the bloat of the other big/popular IDEs.
+        Antimatter is a Python IDE designed to run smoothly on as much devices as possible without having the bloat other big/popular IDEs tend to have.
         This IDE features the following functions:
     </p>
         <ul>
-          <li>Interactive Terminal Interface</li>
-          <li>Git Support</li>
+          <li>Full Interactive Terminal Interface</li>
+          <li>Full Git Support</li>
           <li>Editing Python/Markdown Files</li>
-          <li></li>
+          <li>Compiling Python Scripts</li>
+          <li>Full Discord Rich Presence Support</li>
+          <li>Automatic .venv environments setup</li>
+          <li>Good performance</li>
+          <li>A sleek, PyQT6 Interface</li>
+          <li>Find issues that stop you from running your .py scripts (via PyFlakes)</li>
         </ul>
   </description>
 
@@ -37,13 +42,13 @@
   <!--<url type="translate">https://example.org/translate</url>-->
   <!--<url type="faq">https://example.org/faq</url>-->
   <!-- Should provide a web link to an online user's reference, a software manual or help page -->
-  <!--<url type="help">https://example.org/help</url>-->
+  <url type="help">https://antimatter.codelyteam.com/#docs</url>
   <!-- URLs of this type should point to a webpage showing information on how to donate to the described software project -->
   <!--<url type="donation">https://example.org/donate</url>-->
   <!-- This could for example be an HTTPS URL to an online form or a page describing how to contact the developer -->
-  <!--<url type="contact">https://example.org/contact</url>-->
+  <url type="contact">https://github.com/ComicalSoftwares/Antimatter/tree/main#support</url>
   <!-- URLs of this type should point to a webpage showing information on how to contribute to the described software project -->
-  <!--<url type="contribute">https://example.org/contribute</url>-->
+  <url type="contribute">https://github.com/ComicalSoftwares/Antimatter/blob/main/Code_Of_Conduct.md</url>
 
   <translation type="gettext">antimatter</translation>
   <!-- All graphical applications having a desktop file must have this tag in the MetaInfo.
