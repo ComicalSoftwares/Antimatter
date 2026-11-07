@@ -15,17 +15,14 @@ def project():
     if folder:
         try:
             print(f"Folder: {folder}")
-            subprocess.run(f"cd '{folder}'", shell=True)
-            subprocess.run("python -m venv .venv", shell=True)
-            if platform.system() == "Windows":
-                subprocess.run(".venv/Scripts/activate", shell=True)
-            else:
-                subprocess.run("source .venv/bin/activate", shell=True)
-            QMessageBox.information(None, "Done", "Project configured successfully")
+            py_bin = "python" if platform.system() == "Windows" else "python3"
+            subprocess.run([py_bin, "-m", "venv", ".venv"], cwd=folder, check=True)
+            
+            QMessageBox.information(None, "Done", "Project .venv configured successfully!")
         except Exception as e:
             QMessageBox.critical(None, "Error", f"Couldn't configure project: \n{e}")
     else:
-        print("An error occured while trying to create the environment !")
+        QMessageBox.critical(None, "Error", f"Couldn't configure project: \n{e}")
 
 def docs():
     webbrowser.open("https://antimatter.codelyteam.com/#docs/Quick-Start-Guide")

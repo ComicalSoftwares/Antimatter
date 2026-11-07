@@ -780,7 +780,8 @@ class AntimatterApp(QMainWindow):
         )
         if path3:
             cmd = f'python "{path3}"' if platform.system() == "Windows" else f"python3 {path3}"
-            self.terminal_widget.term_entry.setText(cmd)
+            if hasattr(self.terminal_widget, "term") and self.terminal_widget.term:
+                self.terminal_widget.term.write((cmd + "\n").encode("utf-8"))
             self.terminal_widget.set_focus()
 
     def issues(self):
@@ -794,8 +795,11 @@ class AntimatterApp(QMainWindow):
         iss_win.setCentralWidget(txt)
 
         actual_path = self.get_current_path() or ""
+        
         if platform.system() == "Windows":
             Out = subprocess.run(f'%appdata%/Python/Python314/Scripts/pyflakes.exe "{actual_path}"', capture_output=True, text=True, shell=True)
+        elif is_sandboxed():
+            Out = subprocess.run(f'flatpak-spawn --host pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
         else:
             Out = subprocess.run(f'pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
 

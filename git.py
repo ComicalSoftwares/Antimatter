@@ -1,8 +1,14 @@
 import subprocess
 import os
-from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QDialog, QVBoxLayout, QPlainTextEdit, QPushButton, QTextBrowser
+from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QDialog, QVBoxLayout, QPushButton, QTextBrowser
 import re
 import html
+from pathlib import Path
+
+# If on linux, determine if we're running the flatpak sandbox or nah
+
+def is_sandboxed() -> bool:
+    return "FLATPAK_ID" in os.environ or Path("/.flatpak-info").exists()
 
 # Git add
 def add():
@@ -15,7 +21,10 @@ def add():
         return
     
     try:
-        subprocess.run(f"git add {files}", cwd=project_dir, shell=True, check=True, text=True)
+        if is_sandboxed():
+            subprocess.run(f"flatpak-spawn --host git add {files}", cwd=project_dir, shell=True, check=True, text=True)
+        else:
+            subprocess.run(f"git add {files}", cwd=project_dir, shell=True, check=True, text=True)
         QMessageBox.information(None, "Git action successful", f"Action 'git add {files}' completed successfully")
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f"Action 'git add {files}' couldn't be completed for the following reason: {e}")
@@ -31,7 +40,10 @@ def commit():
         return
 
     try:
-        subprocess.run(f'git commit -m "{message}"', cwd=project_dir, shell=True, check=True, text=True)
+        if is_sandboxed():
+            subprocess.run(f'flatpak-spawn --host git commit -m "{message}"', cwd=project_dir, shell=True, check=True, text=True)
+        else:
+            subprocess.run(f'git commit -m "{message}"', cwd=project_dir, shell=True, check=True, text=True)
         QMessageBox.information(None, "Git action successful", f'''Action 'git commit -m "{message}"' completed successfully''')
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git commit -m "{message}"' couldn't be completed for the following reason: {e}''')
@@ -47,8 +59,12 @@ def set_repo():
         return
 
     try:
-        subprocess.run("git init", cwd=project_dir, shell=True, check=True, text=True)
-        subprocess.run(f'git remote add origin "{url}"', cwd=project_dir, shell=True, check=True, text=True)
+        if is_sandboxed():
+            subprocess.run("flatpak-spawn --host git init", cwd=project_dir, shell=True, check=True, text=True)
+            subprocess.run(f'flatpak-spawn --host git remote add origin "{url}"', cwd=project_dir, shell=True, check=True, text=True)
+        else:
+            subprocess.run("git init", cwd=project_dir, shell=True, check=True, text=True)
+            subprocess.run(f'git remote add origin "{url}"', cwd=project_dir, shell=True, check=True, text=True)
         QMessageBox.information(None, "Git action successful", f'''Action 'git remote add origin "{url}"' completed successfully''')
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git remote add origin "{url}"' couldn't be completed for the following reason: {e}''')
@@ -64,7 +80,10 @@ def push():
         return
     
     try:
-        subprocess.run(f"git push origin {branch}", cwd=project_dir, shell=True, check=True, text=True)
+        if is_sandboxed():
+            subprocess.run(f"flatpak-spawn --host git push origin {branch}", cwd=project_dir, shell=True, check=True, text=True)
+        else:
+            subprocess.run(f"git push origin {branch}", cwd=project_dir, shell=True, check=True, text=True)
         QMessageBox.information(None, "Git action successful", "Changes pushed to remote repository successfully!")
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f"Push couldn't be completed for the following reason: {e}")
@@ -80,7 +99,10 @@ def clone():
         return
 
     try:
-        subprocess.run(f'git clone "{url}"', cwd=project_dir, shell=True, check=True, text=True)
+        if is_sandboxed():
+            subprocess.run(f'flatpak-spawn --host git clone "{url}"', cwd=project_dir, shell=True, check=True, text=True)
+        else:
+            subprocess.run(f'git clone "{url}"', cwd=project_dir, shell=True, check=True, text=True)
         QMessageBox.information(None, "Git action successful", f'''Action 'git clone "{url}"' completed successfully''')
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Action 'git clone "{url}"' couldn't be completed for the following reason: {e}''')
@@ -92,8 +114,11 @@ def sync():
         return
 
     try:
-        subprocess.run(f'git pull', cwd=project_dir, shell=True, check=True, text=True)
-        QMessageBox.information(None, "Git action successful", f'''Sync action via 'git pull' completed successfully''')
+        if is_sandboxed():
+            subprocess.run('flatpak-spawn --host git pull', cwd=project_dir, shell=True, check=True, text=True)
+        else:
+            subprocess.run('git pull', cwd=project_dir, shell=True, check=True, text=True)
+        QMessageBox.information(None, "Git action successful", "Sync action via 'git pull' completed successfully")
     except Exception as e:
         QMessageBox.critical(None, "Git action unsuccessful", f'''Sync action via 'git pull"' couldn't be completed for the following reason: {e}''')
 
@@ -173,10 +198,10 @@ def get_status(file_path):
         root_dir = os.path.dirname(os.path.abspath(file_path))
         
     try:
-        result = subprocess.run(
-            "git status --porcelain",
-            cwd=root_dir, shell=True, capture_output=True, text=True, check=True
-        )
+        if is_sandboxed():
+            result = subprocess.run("flatpak-spawn --host git status --porcelain", cwd=root_dir, shell=True, capture_output=True, text=True, check=True)
+        else:            
+            result = subprocess.run("git status --porcelain", cwd=root_dir, shell=True, capture_output=True, text=True, check=True)
         raw_output = result.stdout.strip()
         if not raw_output:
             _show_text_dialog("Git Status", "Working tree clean. No uncommitted files.")
@@ -209,10 +234,10 @@ def show_file_blame(file_path):
     root_dir = os.path.dirname(os.path.abspath(file_path))
     rel_path = os.path.relpath(file_path, root_dir)
     try:
-        result = subprocess.run(
-            f'git blame "{rel_path}"',
-            cwd=root_dir, shell=True, capture_output=True, text=True, check=True
-        )
+        if is_sandboxed():
+            result = subprocess.run(f'flatpak-spawn --host git blame "{rel_path}"', cwd=root_dir, shell=True, capture_output=True, text=True, check=True)
+        else:
+            result = subprocess.run(f'git blame "{rel_path}"', cwd=root_dir, shell=True, capture_output=True, text=True, check=True)
         formatted_lines = []
         for line in result.stdout.splitlines():
             safe_line = html.escape(line)
@@ -238,10 +263,10 @@ def show_file_diff(file_path):
     root_dir = os.path.dirname(os.path.abspath(file_path))
     rel_path = os.path.relpath(file_path, root_dir)
     try:
-        result = subprocess.run(
-            f'git diff "{rel_path}"',
-            cwd=root_dir, shell=True, capture_output=True, text=True, check=True
-        )
+        if is_sandboxed():
+            result = subprocess.run(f'flatpak-spawn --host git diff "{rel_path}"', cwd=root_dir, shell=True, capture_output=True, text=True, check=True)
+        else:
+            result = subprocess.run(f'git diff "{rel_path}"', cwd=root_dir, shell=True, capture_output=True, text=True, check=True)
         raw_output = result.stdout.strip()
         if not raw_output:
             _show_text_dialog("Git Diff", "No changes detected for this file.")
