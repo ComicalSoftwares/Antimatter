@@ -16,8 +16,6 @@
           <li>Git Support</li>
           <li>Editing Python/Markdown Files</li>
           <li></li>
-          <li>Added "Open folder.." function</li>
-          <li>..and much more ;)</li>
         </ul>
   </description>
 
@@ -73,11 +71,11 @@
       <description translate="no">
         <p>Antimatter is now on flathub !</p>
         <ul>
-          <li>Major UI improvements</li>
-          <li>Full Git Support</li>
-          <li>Code viewer now supports Markdown syntax highlighting</li>
-          <li>Terminal module is now improved and is much more smoother</li>
-          <li>Added "Open folder.." function</li>
+          <li>Major UI improvements.</li>
+          <li>Full Git Support.</li>
+          <li>Code viewer now supports Markdown syntax highlighting.</li>
+          <li>Terminal module is now even better and much more stable/usable.</li>
+          <li>Added "Open folder.." function.</li>
           <li>..and much more ;)</li>
         </ul>
       </description>

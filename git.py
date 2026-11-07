@@ -204,7 +204,7 @@ def get_status(file_path):
             result = subprocess.run("git status --porcelain", cwd=root_dir, shell=True, capture_output=True, text=True, check=True)
         raw_output = result.stdout.strip()
         if not raw_output:
-            _show_text_dialog("Git Status", "Working tree clean. No uncommitted files.")
+            _show_text_dialog("Git Status", "Working tree clean. No uncommitted files... yet")
             return
 
         formatted_lines = []
@@ -251,7 +251,7 @@ def show_file_blame(file_path):
         html_body = f"<pre style='font-family: Consolas;'>{'<br>'.join(formatted_lines)}</pre>"
         _show_text_dialog("Git Blame", html_body, is_html=True)
     except subprocess.CalledProcessError:
-        _show_text_dialog("Git Blame", "Cannot run blame: File is untracked or has not been committed yet.")
+        _show_text_dialog("Git Blame", "Cannot get Git Blame: File is either untracked or has not been committed yet.\n (A quick fix for this is to 'git add' then 'git commit' your files)")
     except Exception as e:
         _show_text_dialog("Git Blame Error", str(e))
 

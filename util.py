@@ -8,7 +8,7 @@ import urllib.request
 import re
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
-CURRENT_VERSION = "1.7"
+CURRENT_VERSION = "1.7" # The new fire release
 
 def project():
     folder = QFileDialog.getExistingDirectory(None, "Choose project folder")
@@ -36,7 +36,7 @@ def update():
                 return
             data = json.load(resp)
     except Exception as e:
-        QMessageBox.critical(None, "Update", f"Failed to check for updates: \n{e}")
+        QMessageBox.critical(None, "Update check failed", f"Failed to check for updates: \n{e}")
         return
 
     latest_tag = data.get("tag_name") or data.get("name") or ""
@@ -53,9 +53,9 @@ def update():
         return 1 if a > b else -1
 
     if not latest_version_nums:
-        res = QMessageBox.question(None, "Update", "Couldn't parse latest release version. Do you want to open pages on Github ?")
+        res = QMessageBox.question(None, "Update check failed", "Couldn't fetch latest release version. Do you want to open the Github repository instead ?")
         if res == QMessageBox.StandardButton.Yes:
-            webbrowser.open(data.get("html_url", "https://github.com/ComicalSoftwares/Antimatter/releases"))
+            webbrowser.open(data.get("html_url", "https://github.com/ComicalSoftwares/Antimatter"))
         return
 
     compare = cmp_ver(latest_version_nums, current_version_nums)

@@ -2,6 +2,7 @@ import sys
 import os
 import pty
 import fcntl
+import termios
 import re
 from pathlib import Path
 from PyQt6.QtCore import QSocketNotifier, Qt
@@ -11,10 +12,9 @@ from PyQt6.QtWidgets import QVBoxLayout, QWidget, QPlainTextEdit, QMenu
 def is_sandboxed() -> bool:
     return "FLATPAK_ID" in os.environ or Path("/.flatpak-info").exists()
 
-# Combined regex to match and filter out OSC metadata and CSI escape codes
 COMBINED_ESCAPE = re.compile(r'''
-    (\x1b\].*?(?:\x07|\x1b\\))|    # OSC sequences (window title, shell integration)
-    (\x1b\[([?0-9;]*)([A-Za-z]))   # CSI sequences (colors, cursor, modes)
+    (\x1b\].*?(?:\x07|\x1b\\))|
+    (\x1b\[([?0-9;]*)([A-Za-z])) 
 ''', re.VERBOSE)
 
 PROMPT_PATTERN = re.compile(r'\[[\w\-]+@[\w\-]+\s+[^\]]+\][\$#]')
@@ -34,7 +34,7 @@ class NativeTerminalWidget(QPlainTextEdit):
         self.master_fd = None
         self.notifier = None
         self.current_format = QTextCharFormat()
-        self.prompt_end_position = 0
+        self.input_start_pos = 0
         self.init_terminal()
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_context_menu)
@@ -58,6 +58,13 @@ class NativeTerminalWidget(QPlainTextEdit):
                     sys.exit(0)
                 else:
                     fcntl.fcntl(self.master_fd, fcntl.F_SETFL, os.O_NONBLOCK)
+                    try:
+                        attr = termios.tcgetattr(self.master_fd)
+                        attr[3] &= ~termios.ECHO
+                        termios.tcsetattr(self.master_fd, termios.TCSANOW, attr)
+                    except Exception:
+                        pass
+
                     self.notifier = QSocketNotifier(self.master_fd, QSocketNotifier.Type.Read, self)
                     self.notifier.activated.connect(self.handle_pty_output)
             except Exception as e:
@@ -80,42 +87,23 @@ class NativeTerminalWidget(QPlainTextEdit):
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         
-        last_idx = 0
-        for match in COMBINED_ESCAPE.finditer(text):
-            start, end = match.span()
-            if start > last_idx:
-                self._insert_plain_chunk(cursor, text[last_idx:start])
-            
-            osc_seq, csi_seq, params_str, command = match.groups()
-            if osc_seq:
-                pass
-            elif csi_seq:
-                if command == 'm':
-                    self.apply_sgr(params_str)
-                elif command == 'J':
-                    if params_str in ('2', '2J', '0J', ''):
-                        self.clear()
-                        self.prompt_end_position = 0
-            
-            last_idx = end
-
-        if last_idx < len(text):
-            self._insert_plain_chunk(cursor, text[last_idx:])
-
-        # Update prompt input boundary
-        self.prompt_end_position = self.document().characterCount() - 1
-        self.ensureCursorVisible()
-
-    def _insert_plain_chunk(self, cursor, chunk):
         i = 0
-        while i < len(chunk):
-            if chunk[i] == '\b':
-                cursor.deletePreviousChar()
-                i += 1
-                if i + 1 < len(chunk) and chunk[i] == ' ' and chunk[i+1] == '\b':
-                    i += 2
+        n = len(text)
+        while i < n:
+            match = COMBINED_ESCAPE.match(text, i)
+            if match:
+                start, end = match.span()
+                osc_seq, csi_seq, params_str, command = match.groups()
+                if csi_seq:
+                    if command == 'm':
+                        self.apply_sgr(params_str)
+                    elif command == 'J':
+                        if params_str in ('2', '2J', '0J', ''):
+                            self.clear()
+                            self.input_start_pos = 0
+                i = end
             else:
-                prompt_match = PROMPT_PATTERN.match(chunk, i)
+                prompt_match = PROMPT_PATTERN.match(text, i)
                 if prompt_match:
                     p_text = prompt_match.group(0)
                     green_format = QTextCharFormat(self.current_format)
@@ -123,8 +111,12 @@ class NativeTerminalWidget(QPlainTextEdit):
                     cursor.insertText(p_text, green_format)
                     i += len(p_text)
                 else:
-                    cursor.insertText(chunk[i], self.current_format)
+                    if text[i] != '\r' and text[i] != '\b':
+                        cursor.insertText(text[i], self.current_format)
                     i += 1
+
+        self.input_start_pos = self.document().characterCount() - 1
+        self.ensureCursorVisible()
 
     def apply_sgr(self, params_str):
         if not params_str:
@@ -148,7 +140,7 @@ class NativeTerminalWidget(QPlainTextEdit):
                 self.current_format.setForeground(colors[p - 30])
             elif 90 <= p <= 97:
                 bright_colors = [
-                    QColor("#585b70"), QColor("#f38ba8"), QColor("#a6e3a1"), QColor("#f9e2af"),
+                    QColor("#585b70"), QColor("#f38ba8"), QColor("#a6e3a1"), QColor("#a6e3a1"),
                     QColor("#89b4fa"), QColor("#cba6f7"), QColor("#94e2d5"), QColor("#ffffff")
                 ]
                 self.current_format.setForeground(bright_colors[p - 90])
@@ -157,50 +149,46 @@ class NativeTerminalWidget(QPlainTextEdit):
 
     def keyPressEvent(self, event):
         key = event.key()
-        text = event.text()
-
         cursor = self.textCursor()
-
-        # Prevent backspace/delete if nothing is typed or if selection crosses into prompt
-        if key in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
-            if cursor.hasSelection() and cursor.selectionStart() < self.prompt_end_position:
-                event.ignore()
-                return
-            if not cursor.hasSelection() and cursor.position() <= self.prompt_end_position:
-                event.ignore()
-                return
-
-        # Snap cursor to end if typing before the prompt area
-        if not cursor.hasSelection() and cursor.position() < self.prompt_end_position:
-            if key not in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down, 
-                           Qt.Key.Key_Home, Qt.Key.Key_End) and not (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
-                cursor.movePosition(QTextCursor.MoveOperation.End)
-                self.setTextCursor(cursor)
 
         if sys.platform == "win32":
             super().keyPressEvent(event)
-        else:
-            if self.master_fd is not None:
-                try:
-                    if key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
-                        os.write(self.master_fd, b"\n")
-                    elif key == Qt.Key.Key_Backspace:
+            event.accept()
+            return
+
+        if self.master_fd is not None:
+            try:
+                if key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
+                    os.write(self.master_fd, b"\n")
+                    cursor.movePosition(QTextCursor.MoveOperation.End)
+                    self.setTextCursor(cursor)
+                elif key == Qt.Key.Key_Backspace:
+                    if cursor.position() > self.input_start_pos:
+                        cursor.deletePreviousChar()
                         os.write(self.master_fd, b"\x7f")
-                    elif key == Qt.Key.Key_Tab:
-                        os.write(self.master_fd, b"\t")
-                    elif key == Qt.Key.Key_Up:
-                        os.write(self.master_fd, b"\x1b[A")
-                    elif key == Qt.Key.Key_Down:
-                        os.write(self.master_fd, b"\x1b[B")
-                    elif key == Qt.Key.Key_Right:
+                elif key == Qt.Key.Key_Tab:
+                    os.write(self.master_fd, b"\t")
+                elif key == Qt.Key.Key_Up:
+                    os.write(self.master_fd, b"\x1b[A")
+                elif key == Qt.Key.Key_Down:
+                    os.write(self.master_fd, b"\x1b[B")
+                elif key == Qt.Key.Key_Right:
+                    if cursor.position() < self.document().characterCount() - 1:
+                        cursor.movePosition(QTextCursor.MoveOperation.Right)
+                        self.setTextCursor(cursor)
                         os.write(self.master_fd, b"\x1b[C")
-                    elif key == Qt.Key.Key_Left:
-                        if cursor.position() > self.prompt_end_position:
-                            os.write(self.master_fd, b"\x1b[D")
-                    elif text:
+                elif key == Qt.Key.Key_Left:
+                    if cursor.position() > self.input_start_pos:
+                        cursor.movePosition(QTextCursor.MoveOperation.Left)
+                        self.setTextCursor(cursor)
+                        os.write(self.master_fd, b"\x1b[D")
+                else:
+                    text = event.text()
+                    if text and text.isprintable():
+                        cursor.insertText(text, self.current_format)
                         os.write(self.master_fd, text.encode("utf-8"))
-                except OSError:
-                    pass
+            except OSError:
+                pass
         event.accept()
 
     def write_command(self, cmd: str):
