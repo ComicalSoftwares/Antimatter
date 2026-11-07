@@ -1,8 +1,9 @@
 [Desktop Entry]
 Name=Antimatter
 Exec=antimatter
+Comment=A simple and lightweight python IDE
 Icon=io.github.comicalsoftwares.antimatter
 Terminal=false
 Type=Application
-Categories=Utility;IDE;
+Categories=Utility;IDE;DevelopmentProgramming;
 Keywords=Python;python;py
