@@ -8,9 +8,9 @@ from pathlib import Path
 from PyQt6.QtCore import QSocketNotifier, Qt
 from PyQt6.QtGui import QTextCursor, QTextCharFormat, QColor, QFont
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QPlainTextEdit, QMenu
+import task
 
-def is_sandboxed() -> bool:
-    return "FLATPAK_ID" in os.environ or Path("/.flatpak-info").exists()
+is_sandboxed = task.is_sandboxed
 
 COMBINED_ESCAPE = re.compile(r'''
     (\x1b\].*?(?:\x07|\x1b\\))|
@@ -51,10 +51,7 @@ class NativeTerminalWidget(QPlainTextEdit):
                 os.environ["TERM"] = "xterm-256color"
                 pid, self.master_fd = pty.fork()
                 if pid == 0:
-                    if is_sandboxed():
-                        os.execvp("flatpak-spawn", ["flatpak-spawn", "--host", "env", "TERM=xterm-256color", "bash"])
-                    else:
-                        os.execvp("bash", ["bash"])
+                    os.execvp("bash", ["bash"])
                     sys.exit(0)
                 else:
                     fcntl.fcntl(self.master_fd, fcntl.F_SETFL, os.O_NONBLOCK)

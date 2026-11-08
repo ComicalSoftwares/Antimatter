@@ -61,7 +61,6 @@ def compile():
 
         worker.finished.connect(on_finished)
         worker.start()
-
         compile._active_worker = worker
 
     except Exception as e:

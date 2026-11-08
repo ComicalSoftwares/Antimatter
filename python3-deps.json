@@ -133,20 +133,6 @@
                     "sha256": "b30cb6cd253122169c47de245ca24a86bac2a5d3802ba15bf7ba6414eb9e144d"
                 }
             ]
-        },
-        {
-            "name": "python3-nuitka",
-            "buildsystem": "simple",
-            "build-commands": [
-                "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"nuitka\" --no-build-isolation"
-            ],
-            "sources": [
-                {
-                    "type": "file",
-                    "url": "https://files.pythonhosted.org/packages/46/19/9e0a68ea7bf6124843eaf2163430edc80569d4ce33511928e3958c960fb3/nuitka-4.3.4.tar.gz",
-                    "sha256": "e98e0c9a3224b581cf8ec0fab92b039b90fb7fa78673550c22833a82de444b25"
-                }
-            ]
         }
     ]
 }

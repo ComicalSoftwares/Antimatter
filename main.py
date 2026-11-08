@@ -102,6 +102,8 @@ def custom():
 class AntimatterApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        global is_sandboxed
+        is_sandboxed = task.is_sandboxed()
         self.setObjectName("Comical")
         self.setWindowTitle("Comical Antimatter")
         self.resize(1050, 650)
@@ -535,15 +537,24 @@ class AntimatterApp(QMainWindow):
 
         view_menu = menubar.addMenu("View")
         view_menu.addAction(self.sidebar_dock.toggleViewAction())
-        view_menu.addAction("Toggle Terminal/Code view\tCtrl + T", self.toggle_terminal)
+        if not is_sandboxed:
+            view_menu.addAction("Toggle Terminal/Code view\tCtrl + T", self.toggle_terminal)
+        else:
+            pass
 
         task_menu = menubar.addMenu("Task")
         task_menu.addAction("Run\t F5", self.Drun)
-        task_menu.addAction("Build project\tCtrl + F5", task.compile)
+        if not is_sandboxed:
+            task_menu.addAction("Build project\tCtrl + F5", task.compile)
+        else:
+            pass
         task_menu.addAction("Find issues\tCtrl + I", self.issues)
 
         tools_menu = menubar.addMenu("Tools")
-        tools_menu.addAction("Set up .venv environment", util.project)
+        if not is_sandboxed:
+            tools_menu.addAction("Set up .venv environment", util.project)
+        else:
+            pass
         tools_menu.addAction("Check for updates", util.update)
         tools_menu.addSeparator()
         tools_menu.addAction("Refresh Discord RPC", discord)
@@ -552,34 +563,54 @@ class AntimatterApp(QMainWindow):
         tools_menu.addAction("Open official Antimatter Documentation\tF1", util.docs)
         tools_menu.addAction("About Antimatter", util.about)
 
-        git_menu = menubar.addMenu("Git")
-        git_menu.addAction("Add remote repository", git.set_repo)
-        git_menu.addAction("Clone", git.clone)
-        git_menu.addSeparator()
-        git_menu.addAction("Add files (Git add)", git.add)
-        git_menu.addAction("Commit", git.commit)
-        git_menu.addAction("Sync (Pull)", git.sync)
-        git_menu.addAction("Push", git.push)
+        if not is_sandboxed:
+            git_menu = menubar.addMenu("Git")
+            git_menu.addAction("Add remote repository", git.set_repo)
+            git_menu.addAction("Clone", git.clone)
+            git_menu.addSeparator()
+            git_menu.addAction("Add files (Git add)", git.add)
+            git_menu.addAction("Commit", git.commit)
+            git_menu.addAction("Sync (Pull)", git.sync)
+            git_menu.addAction("Push", git.push)
+        else:
+            pass
         
 
     def _setup_shortcuts(self):
-        binds = [
-            ("Ctrl+S", self.save_file),
-            ("Ctrl+Shift+S", self.save_file_as),
-            ("Ctrl+O", self.open_file),
-            ("Ctrl+N", self.new_file),
-            ("Ctrl+W", self.close_current_tab),
-            ("Ctrl+Tab", self.cycle_next_tab),
-            ("F5", self.Drun),
-            ("Ctrl+F5", task.compile),
-            ("Ctrl+I", self.issues),
-            ("Ctrl+T", self.toggle_terminal),
-            ("Ctrl+B", self.toggle_sidebar),
-            ("Ctrl+F", lambda: self._ed(lambda ed: ed.open_find(False))),
-            ("Ctrl+R", lambda: self._ed(lambda ed: ed.open_find(True))),
-            ("Ctrl+Shift+P", lambda: self._ed(lambda ed: ed.toggle_preview())),
-            ("F1", util.docs)
-        ]
+        if not is_sandboxed:
+            binds = [
+                ("Ctrl+S", self.save_file),
+                ("Ctrl+Shift+S", self.save_file_as),
+                ("Ctrl+O", self.open_file),
+                ("Ctrl+N", self.new_file),
+                ("Ctrl+W", self.close_current_tab),
+                ("Ctrl+Tab", self.cycle_next_tab),
+                ("F5", self.Drun),
+                ("Ctrl+F5", task.compile),
+                ("Ctrl+I", self.issues),
+                ("Ctrl+B", self.toggle_sidebar),
+                ("Ctrl+F", lambda: self._ed(lambda ed: ed.open_find(False))),
+                ("Ctrl+R", lambda: self._ed(lambda ed: ed.open_find(True))),
+                ("Ctrl+Shift+P", lambda: self._ed(lambda ed: ed.toggle_preview())),
+                ("F1", util.docs),
+                ("Ctrl+T", self.toggle_terminal)
+            ]
+        else:
+            binds = [
+                ("Ctrl+S", self.save_file),
+                ("Ctrl+Shift+S", self.save_file_as),
+                ("Ctrl+O", self.open_file),
+                ("Ctrl+N", self.new_file),
+                ("Ctrl+W", self.close_current_tab),
+                ("Ctrl+Tab", self.cycle_next_tab),
+                ("F5", self.Drun),
+                ("Ctrl+I", self.issues),
+                ("Ctrl+B", self.toggle_sidebar),
+                ("Ctrl+F", lambda: self._ed(lambda ed: ed.open_find(False))),
+                ("Ctrl+R", lambda: self._ed(lambda ed: ed.open_find(True))),
+                ("Ctrl+Shift+P", lambda: self._ed(lambda ed: ed.toggle_preview())),
+                ("F1", util.docs)
+            ]
         for seq, fn in binds:
             action = QAction(self)
             action.setShortcut(QKeySequence(seq))
@@ -816,9 +847,6 @@ class AntimatterApp(QMainWindow):
                 self.terminal_widget.write((cmd).encode("utf-8"))
             self.terminal_widget.set_focus()
 
-    
-    def is_sandboxed(self) -> bool:
-        return "FLATPAK_ID" in os.environ or Path("/.flatpak-info").exists()
     def issues(self):
         self.iss_win = QMainWindow(self)
         self.iss_win.resize(700, 400)

@@ -4,19 +4,17 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
-  <name>Antimatter</name>
+  <name>Antimatter Lite</name>
   <summary>Code in Python. Not in Bloat.</summary>
   <description>
     <p>
         Antimatter is a Python IDE designed to run smoothly on as many devices as possible without having the bloat other big/popular IDEs tend to have.
+        This is the light version of the OG project, it can only edit/run python/markdown files to be flathub-compilant.
         This IDE features the following functions:
     </p>
         <ul>
           <li>A Distraction-free interface. No popups, everything is on-demand</li>
-          <li>Full Interactive Terminal Interface</li>
-          <li>Full Git Support</li>
           <li>Editing Python/Markdown Files</li>
-          <li>Compiling Python Scripts</li>
           <li>Full Discord Rich Presence Support</li>
           <li>Automatic .venv environments setup</li>
           <li>Actually Good performance</li>
@@ -74,10 +72,6 @@
       <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/action.png?raw=true</image>
       <caption>Editing a script</caption>
     </screenshot>
-    <screenshot type="default">
-      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/term.png?raw=true</image>
-      <caption>Running terminal commands</caption>
-    </screenshot>
   </screenshots>
 
   <releases>
@@ -86,9 +80,7 @@
         <p>Antimatter is now on Flathub !</p>
         <ul>
           <li>Major UI improvements.</li>
-          <li>Full Git Support.</li>
           <li>Code viewer now supports Markdown syntax highlighting.</li>
-          <li>Terminal module is now even better and much more stable/usable.</li>
           <li>Added "Open folder" function.</li>
           <li>Discord RPC Improvements</li>
           <li>And so much more.. ;)</li>
