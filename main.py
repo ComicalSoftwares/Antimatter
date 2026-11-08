@@ -543,8 +543,8 @@ class AntimatterApp(QMainWindow):
             pass
 
         task_menu = menubar.addMenu("Task")
-        task_menu.addAction("Run\t F5", self.Drun)
         if not is_sandboxed:
+            task_menu.addAction("Run\t F5", self.Drun)
             task_menu.addAction("Build project\tCtrl + F5", task.compile)
         else:
             pass
@@ -603,7 +603,6 @@ class AntimatterApp(QMainWindow):
                 ("Ctrl+N", self.new_file),
                 ("Ctrl+W", self.close_current_tab),
                 ("Ctrl+Tab", self.cycle_next_tab),
-                ("F5", self.Drun),
                 ("Ctrl+I", self.issues),
                 ("Ctrl+B", self.toggle_sidebar),
                 ("Ctrl+F", lambda: self._ed(lambda ed: ed.open_find(False))),
