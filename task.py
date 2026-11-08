@@ -37,14 +37,14 @@ def compile():
 
         sandboxed = is_sandboxed()
         if sandboxed:
-            full_cmd = ["flatpak-spawn", "--host", "bash", "-c", content]
+            full_cmd = f"flatpak-spawn --host {content}"
             shell = False
         else:
             full_cmd = content
             shell = True
 
         progress = QProgressDialog("Building project, please wait...", None, 0, 0, None)
-        progress.setWindowTitle("Compiling")
+        progress.setWindowTitle("Compiling project...")
         progress.setWindowModality(Qt.WindowModality.ApplicationModal)
         progress.setCancelButton(None)
         progress.setRange(0, 0)

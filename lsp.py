@@ -1,4 +1,4 @@
-# This shit is kind of broken, gotta fix it later
+# This is kind of broken, gotta fix it later
 
 import asyncio
 import json

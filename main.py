@@ -4,6 +4,7 @@ import platform
 import subprocess
 import time
 import shutil
+from pypresence import Presence
 from pathlib import Path
 from PyQt6.QtCore import Qt, QDir, QUrl
 from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFileSystemModel, QDesktopServices, QPixmap, QColor
@@ -12,20 +13,20 @@ from PyQt6.QtWidgets import (
     QTabWidget, QPlainTextEdit,
     QFileDialog, QMessageBox, QPushButton, QTreeView,
     QDockWidget, QMenu, QInputDialog, QStackedWidget,
-    QGraphicsColorizeEffect, QLabel
-)
+    QGraphicsColorizeEffect, QLabel)
 
 # To anyone looking at this mess, don't mind the comments on these imports,
-# they're just internet jokes
+# they're just internet jokes that I personally find funny lol
 
-import codeview # My beloved codeviewer
-import task # For debugging/compiling
-import util # Whatever this even is
-import terminal # sudo rm -rf /* --yes-preserve-root
-import git # git commit -m "Minor Changes
+import codeview # Codeview, my beloved
+import task # For debugging/compiling stuff
+import util # I don't remember adding this but welp.
+import terminal # sudo rm -rf /home/nyxiereal/metrolist-kmp.. Thank me later, Nyx
+import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -171537723572,1752662453 deletions (-)
 
 
-# Make Antimatter find out it's parent dir
+# Make Antimatter find out it's parent directory
+# so it can find its own stuff
 BASE_DIR = Path(__file__).resolve().parent
 
 
@@ -41,7 +42,7 @@ def update_rpc(filename=None, is_file_path=True):
             display_name = Path(filename).name if is_file_path else filename
             details = f"Editing {display_name}"
         else:
-            details = "Editing an untitled file"
+            details = "Editing a new untitled file"
             
         RPC.update(
             details=details,
@@ -55,13 +56,18 @@ def update_rpc(filename=None, is_file_path=True):
 def discord():
     global RPC
     try:
-        from pypresence import Presence
         client_id = "1487828344480464957"
         if not RPC:
             for pipe_num in range(10):
                 try:
                     RPC = Presence(client_id, pipe=pipe_num)
                     RPC.connect()
+                    RPC.update(
+                        details="Doing absolutely nothing",
+                        start=RPC_START_TIME,
+                        large_image="image",
+                        large_text="Antimatter",
+                    )
                     break
                 except Exception:
                     continue
@@ -84,6 +90,22 @@ def discord():
     except Exception as e:
         print(f"Discord RPC Error: {e}")
 
+# Custom Discord RPC status
+def custom():
+    message, ok = QInputDialog.getText(None, "Custom Discord RPC Status", "Enter the message that you wish to have on your RPC Card")
+    if not ok or not message:
+        return
+    try:
+        RPC.update(
+            details=f'"{message}"',
+            start=RPC_START_TIME,
+            large_image="image",
+            large_text="Antimatter",
+        )
+        QMessageBox.information(None, "Complete !", "Done! Go check out your new status :)")
+    except Exception:
+        QMessageBox.warning(None, "Failed to set RPC status", "Make sure that your Discord client is running and that you are not offline.")
+
 # The main app window and it's core functions
 
 class AntimatterApp(QMainWindow):
@@ -104,6 +126,7 @@ class AntimatterApp(QMainWindow):
                 color: #cdd6f4;
                 font-family: 'Consolas', 'Cantarell';
                 font-size: 12px;
+                border-radius=7px;
             }
             QDockWidget::title {
                 background: #2a2a2e;
@@ -118,6 +141,7 @@ class AntimatterApp(QMainWindow):
                 border: none;
                 font-family: 'Consolas', 'Cantarell';
                 font-size: 12px;
+                border-radius=7px;
             }
             QTreeView::item:hover {
                 background-color: #2a2a2e;
@@ -131,12 +155,14 @@ class AntimatterApp(QMainWindow):
                 width: 10px;
                 margin: 0px;
                 border: none;
+                border-radius=7px;
             }
             QScrollBar:horizontal {
                 background: #19191a;
                 height: 10px;
                 margin: 0px;
                 border: none;
+                border-radius=7px;
             }
             QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
                 background: #45475a;
@@ -156,6 +182,7 @@ class AntimatterApp(QMainWindow):
                 border: none;
                 width: 0px;
                 height: 0px;
+                border-radius=7px;
             }
         """)
 
@@ -258,9 +285,11 @@ class AntimatterApp(QMainWindow):
             QTabWidget::pane {
                 border: none;
                 background: #19191a;
+                border-radius=7px;
             }
             QTabBar {
                 background: #363636;
+                border-radius=7px;
             }
             QTabBar::tab {
                 background: #363636;
@@ -269,16 +298,19 @@ class AntimatterApp(QMainWindow):
                 font-family: 'Consolas', 'Cantarell';
                 font-size: 13px;
                 border: none;
+                border-radius=7px;
             }
             QTabBar::tab:selected {
                 background: #19191a;
                 color: #cdd6f4;
+                border-radius=7px;
             }
             QTabBar::close-button {
                 image: none;
                 subcontrol-position: right;
                 width: 14px;
                 height: 14px;
+                border-radius=7px;
             }
             QTabBar::tab:selected QTabBar::close-button {
                 background: #f38ba8;
@@ -318,6 +350,11 @@ class AntimatterApp(QMainWindow):
         menu.setStyleSheet("""
             QMenu { background-color: #181825; color: #cdd6f4; border: 1px solid #313244; }
             QMenu::item:selected { background-color: #313244; }
+            QMenu::separator {
+                height: 1px;
+                background-color: #89b4fa;
+                margin: 4px 8px;
+            }
         """)
 
         act_new_file = menu.addAction("New File")
@@ -518,10 +555,14 @@ class AntimatterApp(QMainWindow):
         task_menu.addAction("Find issues\tCtrl + I", self.issues)
 
         tools_menu = menubar.addMenu("Tools")
-        tools_menu.addAction("Open official Antimatter Documentation\tF1", util.docs)
         tools_menu.addAction("Set up .venv environment", util.project)
         tools_menu.addAction("Check for updates", util.update)
+        tools_menu.addSeparator()
         tools_menu.addAction("Refresh Discord RPC", discord)
+        tools_menu.addAction("Set custom Discord RPC Status", custom)
+        tools_menu.addSeparator()
+        tools_menu.addAction("Open official Antimatter Documentation\tF1", util.docs)
+        tools_menu.addAction("About Antimatter", util.about)
 
         git_menu = menubar.addMenu("Git")
         git_menu.addAction("Add remote repository", git.set_repo)
@@ -780,7 +821,7 @@ class AntimatterApp(QMainWindow):
         if path3:
             cmd = f'python "{path3}"' if platform.system() == "Windows" else f"python3 {path3}"
             if hasattr(self.terminal_widget, "write"):
-                self.terminal_widget.write((cmd + "\n").encode("utf-8"))
+                self.terminal_widget.write((cmd).encode(UTF-8))
             self.terminal_widget.set_focus()
 
     

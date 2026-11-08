@@ -8,7 +8,7 @@
   <summary>Code in Python. Not in Bloat.</summary>
   <description>
     <p>
-        Antimatter is a Python IDE designed to run smoothly on as much devices as possible without having the bloat other big/popular IDEs tend to have.
+        Antimatter is a Python IDE designed to run smoothly on as many devices as possible without having the bloat other big/popular IDEs tend to have.
         This IDE features the following functions:
     </p>
         <ul>
@@ -55,7 +55,7 @@
      If this is present, appstreamcli compose will pull icons, keywords and categories from the desktop file. -->
   <launchable type="desktop-id">io.github.comicalsoftwares.antimatter.desktop</launchable>
   <!-- Use the OARS website (https://hughsie.github.io/oars/generate.html) to generate these and make sure to use oars-1.1 -->
-  <content_rating type="oars-1.1"></content_rating>
+  <content_rating type="oars-1.1">none</content_rating>
 
 
   <!-- Applications should set a brand color in both light and dark variants like so -->
@@ -88,7 +88,7 @@
           <li>Full Git Support.</li>
           <li>Code viewer now supports Markdown syntax highlighting.</li>
           <li>Terminal module is now even better and much more stable/usable.</li>
-          <li>Added "Open folder.." function.</li>
+          <li>Added "Open folder" function.</li>
           <li>..and much more ;)</li>
         </ul>
       </description>

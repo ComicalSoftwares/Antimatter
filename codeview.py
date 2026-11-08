@@ -157,6 +157,7 @@ class AntimatterTextEdit(QPlainTextEdit):
                 color: #D8DEE9;
                 border: none;
                 selection-background-color: #2e3c64;
+                border-radius: 7px;
             }
         """)
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
@@ -432,7 +433,7 @@ class LspSignals(QObject):
 class AntimatterEditor(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setStyleSheet("background-color: #19191a;")
+        self.setStyleSheet("background-color: #19191a; border-radius=7px;")
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -563,6 +564,7 @@ class AntimatterEditor(QFrame):
                 background-color: #181825;
                 color: #cdd6f4;
                 border: 1px solid #313244;
+                border-radius=7px;
             }
             QListWidget::item:selected {
                 background-color: #313244;
@@ -603,6 +605,7 @@ class AntimatterEditor(QFrame):
                 background-color: #181825;
                 color: #cdd6f4;
                 border: 1px solid #313244;
+                border-radius=7px
             }
             QMenu::item:selected {
                 background-color: #313244;

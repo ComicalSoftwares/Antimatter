@@ -5,7 +5,7 @@ import re
 import html
 from pathlib import Path
 
-# If on linux, determine if we're running the flatpak sandbox or nah
+# If on linux, determine if we're running as a flutpuk or nah
 
 def is_sandboxed() -> bool:
     return "FLATPAK_ID" in os.environ or Path("/.flatpak-info").exists()
