@@ -11,8 +11,6 @@
         "--socket=fallback-x11",
         "--socket=wayland",
         "--device=dri",
-        "--share=network",
-        "--talk-name=org.freedesktop.Flatpak",
         "--filesystem=xdg-run/discord-ipc-0",
         "--filesystem=xdg-run/app/com.discordapp.Discord:create"
     ],
@@ -33,7 +31,7 @@
                 {
                     "type": "git",
                     "url": "https://github.com/ComicalSoftwares/Antimatter.git",
-                    "commit": "e453bf0b455bd88caa21598b02924716f3524445"
+                    "commit": "faefe74f20a67e45f120c2795550f9918feac29a"
                 }
             ]
         }
