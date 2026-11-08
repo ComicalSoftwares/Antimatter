@@ -4,6 +4,8 @@ from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QDialog, QVB
 import re
 import html
 from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent
+icon = str(BASE_DIR / "AppIcon.png")
 
 # If on linux, determine if we're running as a flutpuk or nah
 
@@ -128,6 +130,7 @@ def _show_text_dialog(title, content, is_html=False):
     dlg.resize(650, 450)
     dlg.setWindowTitle(title)
     dlg.setStyleSheet("background-color: #363636; color: purple;")
+    dlg.setWindowIcon(QIcon(icon))
     layout = QVBoxLayout(dlg)
     
     edit = QTextBrowser(dlg)

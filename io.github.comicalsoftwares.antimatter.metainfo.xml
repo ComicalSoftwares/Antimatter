@@ -12,15 +12,16 @@
         This IDE features the following functions:
     </p>
         <ul>
+          <li>A Distraction-free interface. No popups, everything is on-demand</li>
           <li>Full Interactive Terminal Interface</li>
           <li>Full Git Support</li>
           <li>Editing Python/Markdown Files</li>
           <li>Compiling Python Scripts</li>
           <li>Full Discord Rich Presence Support</li>
           <li>Automatic .venv environments setup</li>
-          <li>Good performance</li>
-          <li>A sleek, PyQT6 Interface</li>
-          <li>Find issues that stop you from running your .py scripts (via PyFlakes)</li>
+          <li>Actually Good performance</li>
+          <li>A sleek, PyQT6 Interface built from the ground up to beautifully integrate with the KDE Plasme environment</li>
+          <li>Quickly find the bugs that stop you from running your .py scripts (Powered by PyFlakes)</li>
         </ul>
   </description>
 
@@ -35,7 +36,7 @@
   <!-- Should point to the software's bug tracking system, for users to report new bugs -->
   <url type="bugtracker">https://github.com/ComicalSoftwares/Antimatter/issues</url>
 
-  <!-- Disabled the next lines because for the moment I do not have the corresponding resources for them -->
+  <!-- Disabled some of the next lines because for the moment I do not have the corresponding resources for them -->
 
   <!-- Should link a FAQ page for this software, to answer some of the most-asked questions in detail -->
   <!-- URLs of this type should point to a webpage where users can submit or modify translations of the upstream project -->
@@ -80,16 +81,17 @@
   </screenshots>
 
   <releases>
-    <release version="1.7" date="2026-11-06">
+    <release version="1.7" date="2026-11-08">
       <description translate="no">
-        <p>Antimatter is now on flathub !</p>
+        <p>Antimatter is now on Flathub !</p>
         <ul>
           <li>Major UI improvements.</li>
           <li>Full Git Support.</li>
           <li>Code viewer now supports Markdown syntax highlighting.</li>
           <li>Terminal module is now even better and much more stable/usable.</li>
           <li>Added "Open folder" function.</li>
-          <li>..and much more ;)</li>
+          <li>Discord RPC Improvements</li>
+          <li>And so much more.. ;)</li>
         </ul>
       </description>
     </release>

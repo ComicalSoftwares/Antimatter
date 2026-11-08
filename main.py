@@ -28,21 +28,24 @@ import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -17153772357
 # Make Antimatter find out it's parent directory
 # so it can find its own stuff
 BASE_DIR = Path(__file__).resolve().parent
+icon_path = str(BASE_DIR / "AppIcon.png")
 
 
 # Setup Discord Rich Presence
 RPC = None
 RPC_START_TIME = time.time()
+is_custom=False
 
 def update_rpc(filename=None, is_file_path=True):
-    if not RPC:
+    global is_custom
+    if is_custom or not RPC:
         return
     try:
         if filename:
             display_name = Path(filename).name if is_file_path else filename
             details = f"Editing {display_name}"
         else:
-            details = "Editing a new untitled file"
+            details = "Editing a New Untitled File"
             
         RPC.update(
             details=details,
@@ -54,7 +57,8 @@ def update_rpc(filename=None, is_file_path=True):
         print(f"Couldn't update Discord RPC: {e}")
 
 def discord():
-    global RPC
+    global RPC, is_custom
+    is_custom=False
     try:
         client_id = "1487828344480464957"
         if not RPC:
@@ -71,40 +75,27 @@ def discord():
                     break
                 except Exception:
                     continue
-        
-        filename = None
-        app_instance = QApplication.instance()
-        if app_instance:
-            for top_widget in app_instance.topLevelWidgets():
-                if isinstance(top_widget, AntimatterApp):
-                    ed = top_widget.get_current_editor()
-                    if ed:
-                        path = top_widget.get_current_path()
-                        if path:
-                            filename = Path(path).name
-                        else:
-                            tabs_data = getattr(top_widget, 'tabs_data', {})
-                            if ed in tabs_data:
-                                filename = tabs_data[ed].get("title", "Untitled")
-        update_rpc(filename)
     except Exception as e:
         print(f"Discord RPC Error: {e}")
 
 # Custom Discord RPC status
 def custom():
+    global is_custom
+    is_custom=True
     message, ok = QInputDialog.getText(None, "Custom Discord RPC Status", "Enter the message that you wish to have on your RPC Card")
     if not ok or not message:
         return
     try:
         RPC.update(
-            details=f'"{message}"',
+            details=message,
             start=RPC_START_TIME,
             large_image="image",
             large_text="Antimatter",
         )
         QMessageBox.information(None, "Complete !", "Done! Go check out your new status :)")
-    except Exception:
-        QMessageBox.warning(None, "Failed to set RPC status", "Make sure that your Discord client is running and that you are not offline.")
+    except Exception as e:
+        print(e)        
+        QMessageBox.warning(None, "Failed to set RPC status", "Make sure that your Discord client is running and that you are not offline. If your status is less than two letters long then it will not work, just so you know.")
 
 # The main app window and it's core functions
 
@@ -186,7 +177,6 @@ class AntimatterApp(QMainWindow):
             }
         """)
 
-        icon_path = str(BASE_DIR / "AppIcon.png")
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -338,8 +328,6 @@ class AntimatterApp(QMainWindow):
 
         self._setup_menubar()
         self._setup_shortcuts()
-
-        discord()
 
     def _show_tree_context_menu(self, position):
         index = self.tree.indexAt(position)
@@ -667,10 +655,12 @@ class AntimatterApp(QMainWindow):
         self.stack.setCurrentIndex(1)
         self.tabs.setCurrentIndex(index)
 
-        if file_path:
+        if file_path and not is_custom:
             update_rpc(file_path, is_file_path=True)
-        else:
+        elif not is_custom:
             update_rpc(None)
+        else:
+            pass
 
         return editor
 
@@ -696,12 +686,14 @@ class AntimatterApp(QMainWindow):
             return
         path = self.tabs_data[editor]["path"]
 
-        if path:
+        if path and not is_custom:
             self.setWindowTitle(f"{path} - Comical Antimatter")
             update_rpc(path, is_file_path=True)
-        else:
+        elif not is_custom:
             self.setWindowTitle("Comical Antimatter")
             update_rpc(None)
+        else:
+            self.setWindowTitle("Comical Antimatter")
 
     def close_tab_by_widget(self, widget):
         idx = self.tabs.indexOf(widget)
@@ -821,7 +813,7 @@ class AntimatterApp(QMainWindow):
         if path3:
             cmd = f'python "{path3}"' if platform.system() == "Windows" else f"python3 {path3}"
             if hasattr(self.terminal_widget, "write"):
-                self.terminal_widget.write((cmd).encode(UTF-8))
+                self.terminal_widget.write((cmd).encode("utf-8"))
             self.terminal_widget.set_focus()
 
     
@@ -865,7 +857,7 @@ class AntimatterApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setDesktopFileName("com.comicalsoftwares.antimatter")
+    app.setDesktopFileName("io.github.comicalsoftwares.antimatter")
     window = AntimatterApp()
     window.show()
     discord()

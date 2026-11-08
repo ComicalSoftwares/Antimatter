@@ -297,7 +297,7 @@ class FindBar(QFrame):
         self.case = QToolButton(text="Aa", checkable=True, toolTip="Match case")
         prev = QToolButton(text="↑", toolTip="Previous (Shift+Enter)")
         nxt = QToolButton(text="↓", toolTip="Next (Enter)")
-        close = QToolButton(text="✕", toolTip="Close (Esc)")
+        close = QToolButton(text="×", toolTip="Close (Esc)")
         for w in (self.find, self.count, self.case, prev, nxt, close):
             row1.addWidget(w)
         outer.addLayout(row1)
