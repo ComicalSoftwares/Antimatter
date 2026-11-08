@@ -103,6 +103,19 @@ def about_window(content, is_html=False):
             background-color: #45475a;
         }
     """)
+    btn2 = QPushButton("Visit the Github repository", dlg)
+    btn2.setStyleSheet("""
+        QPushButton {
+            background-color: #1f1f1f;
+            color: #cdd6f4;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+        QPushButton:hover {
+            background-color: #45475a;
+        }
+    """)
     title_label = QLabel("Comical Antimatter")
     title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title_label.setStyleSheet("color: white; font-family: 'Consolas', 'Cantarell'; font-size: 30px; font-weight: bold; background: transparent;")
@@ -152,11 +165,13 @@ def about_window(content, is_html=False):
         }
     """)
     btn.clicked.connect(dlg.accept)
+    btn2.clicked.connect(lambda: webbrowser.open("https://github.com/ComicalSoftwares/Antimatter/"))
     layout.addWidget(logo_label)
     layout.addWidget(title_label)
     layout.addWidget(footer_label)
     layout.addWidget(footer_label2)
     layout.addWidget(about_text)
+    layout.addWidget(btn2)
     layout.addWidget(btn)
     dlg.exec()
 
