@@ -27,7 +27,7 @@ import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -17153772357
 
 # Make Antimatter find out it's parent directory
 # so it can find its own stuff
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = util.BASE_DIR
 icon_path = str(BASE_DIR / "AppIcon.png")
 
 
@@ -858,12 +858,11 @@ class AntimatterApp(QMainWindow):
 
         actual_path = self.get_current_path() or ""
         
-        if platform.system() == "Windows":
-            Out = subprocess.run(f'%appdata%/Python/Python314/Scripts/pyflakes.exe "{actual_path}"', capture_output=True, text=True, shell=True)
-        elif self.is_sandboxed():
-            Out = subprocess.run(f'flatpak-spawn --host pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
-        else:
+        try:
             Out = subprocess.run(f'pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
+        except Exception as e:
+            print(f'[E]: {e}')
+            QMessageBox.warning(None, "Pyflakes error", "Couldn't run pyflakes.")
 
         output_str = Out.stdout + Out.stderr
         if not output_str.strip():
