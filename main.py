@@ -723,18 +723,15 @@ class AntimatterApp(QMainWindow):
         editor = self.get_current_editor()
         if not editor:
             update_rpc(None)
-            self.setWindowTitle("Comical Antimatter")
             return
         path = self.tabs_data[editor]["path"]
 
         if path and not is_custom:
-            self.setWindowTitle(f"{path} - Comical Antimatter")
             update_rpc(path, is_file_path=True)
         elif not is_custom:
-            self.setWindowTitle("Comical Antimatter")
             update_rpc(None)
         else:
-            self.setWindowTitle("Comical Antimatter")
+            pass
 
     def close_tab_by_widget(self, widget):
         idx = self.tabs.indexOf(widget)
@@ -748,7 +745,6 @@ class AntimatterApp(QMainWindow):
         self.tabs.removeTab(index)
         if self.tabs.count() == 0:
             self.stack.setCurrentIndex(0)
-            self.setWindowTitle("Comical Antimatter")
             update_rpc(None)
 
     def close_current_tab(self):
@@ -800,7 +796,6 @@ class AntimatterApp(QMainWindow):
             self.tabs_data[editor]["path"] = path2
             self.tabs_data[editor]["title"] = filename
             self.mark_tab_saved(editor)
-            self.setWindowTitle(f"{path2} - Comical Antimatter")
             if hasattr(editor, "start_lsp"):
                 editor.start_lsp(path2)
             if hasattr(editor, "set_file_path"):
