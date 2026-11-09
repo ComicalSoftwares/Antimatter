@@ -330,6 +330,17 @@ class AntimatterApp(QMainWindow):
 
         self._setup_menubar()
         self._setup_shortcuts()
+        self.handle_startup_arguments()
+    
+    def handle_startup_arguments(self):
+        if len(sys.argv) > 1:
+            for arg in sys.argv[1:]:
+                resolved_path = os.path.abspath(arg)
+                if os.path.isdir(resolved_path):
+                    self.file_model.setRootPath(resolved_path)
+                    self.tree.setRootIndex(self.file_model.index(resolved_path))
+                elif os.path.isfile(resolved_path):
+                    self.open_file_by_path(resolved_path)
 
     def _show_tree_context_menu(self, position):
         index = self.tree.indexAt(position)

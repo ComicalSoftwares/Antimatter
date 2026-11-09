@@ -7,3 +7,4 @@ Terminal=false
 Type=Application
 Categories=Utility;IDE;Development;
 Keywords=Python;python;py
+MimeType=text/plain;text/x-python;text/markdown;inode/directory;
