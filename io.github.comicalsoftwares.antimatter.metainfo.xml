@@ -16,8 +16,8 @@
           <li>A Distraction-free interface. No popups, everything is on-demand</li>
           <li>Editing Python/Markdown Files</li>
           <li>Full Discord Rich Presence Support</li>
-          <li>Actually Good performance</li>
-          <li>A sleek, PyQT6 Interface built from the ground up to beautifully integrate with the KDE Plasme environment</li>
+          <li>Actually good performance when editing</li>
+          <li>A sleek, PyQT6 Interface built from the ground up to beautifully integrate with the KDE Plasma desktop environment</li>
           <li>Quickly find the bugs that stop you from running your .py scripts (Powered by PyFlakes)</li>
         </ul>
   </description>
