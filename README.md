@@ -7,7 +7,7 @@ A modern, lightweight and absurdly optimized Python IDE written in **Python and 
 </div>
 
 > [!WARNING]
-> Antimatter's current development status is in **early alpha**. We do not recommend you to uninstall your current IDE yet. If you really want to switch then at least wait for it to pass to **Beta stage**.. (which will indeed take a while).
+> Antimatter's current development status is in **early alpha**. While totally usable as a daily driver, we do not recommend you to uninstall your current IDE yet. If you really want to 100% switch then at least wait for it to pass to **Beta stage**.. (which will indeed take a while). You can still switch now, but don't expect it to be perfect yet !
 
 ## Features
 - Editing and running python scripts
@@ -69,11 +69,12 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] Keyboard Shortcuts.
 - [X] Issues finder.
 - [X] Tabs.
+- [X] Editing Markdown. _(Can't preview tho, which is not something I plan to add)_
 - [ ] LSP and suggestions **(Exists and works but not reliable yet)**
 ### Debugging and managing projects
 - [X] File manager.
-- [X] Live terminal (Beta, needs work)
-- [X] Running Scripts (With and without debugger)
+- [X] Live terminal (Beta, needs some work)
+- [X] Running Scripts
 ### Customization
 - [ ] Preferences
 - [ ] Themes

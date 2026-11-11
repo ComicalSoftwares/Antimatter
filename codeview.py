@@ -1,10 +1,11 @@
 import os
 import re
+import hashlib
 import asyncio
 import threading
-from pygments.lexers import PythonLexer
-from pygments import lex
-from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QObject
+from pathlib import Path
+
+from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QObject, QTimer, QStandardPaths
 from PyQt6.QtGui import QColor, QFont, QPainter, QSyntaxHighlighter, QTextCharFormat, QTextCursor, QTextDocument
 from PyQt6.QtWidgets import (
     QWidget, QPlainTextEdit, QTextEdit, QListWidget, QMenu, QHBoxLayout, 
@@ -43,9 +44,6 @@ class LineNumberArea(QWidget):
     def paintEvent(self, event):
         self.codeEditor.lineNumberAreaPaintEvent(event)
 
-
-# Thanks to contributor LiteBands-Pro for showing me how to fix
-# the syntax rendering bugs and improving the codeviewer's logic
 
 class PythonHighlighter(QSyntaxHighlighter):
     TRIPLE = {1: '"""', 2: "'''"}
@@ -107,7 +105,6 @@ class PythonHighlighter(QSyntaxHighlighter):
             else:
                 fmt(s, e - s, f[kind])
 
-# We now support Markdown !
 
 class MarkdownHighlighter(QSyntaxHighlighter):
     def __init__(self, document):
@@ -123,19 +120,12 @@ class MarkdownHighlighter(QSyntaxHighlighter):
             if bg: f.setBackground(QColor(bg))
             return f
 
-        # Headers (# Header)
         self.rules.append((re.compile(r"^#{1,6}\s+.*$"), fmt("#61afef", bold=True)))
-        # Bold (**text** ou __text__)
         self.rules.append((re.compile(r"\*\*.*?\*\*|__.*?__"), fmt("#e5c07b", bold=True)))
-        # Italic (*text* ou _text_)
         self.rules.append((re.compile(r"\*[^\*\n]+\*|_[^_\n]+_"), fmt("#c678dd", italic=True)))
-        # Code blocks (`code`)
         self.rules.append((re.compile(r"`[^`]+`"), fmt("#3ab557", bg="#23272e")))
-        # Blockquotes
         self.rules.append((re.compile(r"^\s*>.*$"), fmt("#5c6370", italic=True)))
-        # Links ([text](url))
         self.rules.append((re.compile(r"\[([^\]]+)\]\(([^)]+)\)"), fmt("#56b6c2", underline=True)))
-        # Lists
         self.rules.append((re.compile(r"^\s*([\*\-\+]|\d+\.)\s+"), fmt("#d19a66", bold=True)))
 
     def highlightBlock(self, text):
@@ -148,10 +138,11 @@ class MarkdownHighlighter(QSyntaxHighlighter):
 class AntimatterTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
-        global is_sandboxed
-        is_sandboxed=task.is_sandboxed()
+        global sandboxed
+        sandboxed = task.is_sandboxed()
         self.font_family = "Consolas"
         self.font_size = 13
+        self.highlighter = None
         
         self.setFont(QFont(self.font_family, self.font_size))
         self.setStyleSheet("""
@@ -270,17 +261,15 @@ class AntimatterTextEdit(QPlainTextEdit):
         self.setExtraSelections(sels)
 
 
-# Find/Replace implementation, inspired by contributor Litebands-Pro's approach
-
 class FindBar(QFrame):
-    def __init__(self, edit):
+    def __init__(self, editor_container):
         super().__init__()
-        self.edit = edit
+        self.editor = editor_container
         self.setStyleSheet('''
             FindBar { 
                 background: #19191a; 
                 border-bottom: 3px solid #313244; 
-                }
+            }
             QToolTip {
                 background-color: #181825;
                 color: #cdd6f4;
@@ -315,15 +304,15 @@ class FindBar(QFrame):
         r2.addWidget(b_all)
         outer.addWidget(self.row2)
 
-        self.find.textChanged.connect(lambda: self._refresh(select=True))
-        self.case.toggled.connect(lambda: self._refresh(select=True))
-        self.find.returnPressed.connect(lambda: self.step(False))
-        self.repl.returnPressed.connect(self.replace_one)
-        prev.clicked.connect(lambda: self.step(True))
-        nxt.clicked.connect(lambda: self.step(False))
+        self.find.textChanged.connect(lambda: self.editor.refresh_find(select=True))
+        self.case.toggled.connect(lambda: self.editor.refresh_find(select=True))
+        self.find.returnPressed.connect(lambda: self.editor.step_find(False))
+        self.repl.returnPressed.connect(self.editor.replace_one)
+        prev.clicked.connect(lambda: self.editor.step_find(True))
+        nxt.clicked.connect(lambda: self.editor.step_find(False))
         close.clicked.connect(self.close_bar)
-        b_rep.clicked.connect(self.replace_one)
-        b_all.clicked.connect(self.replace_all)
+        b_rep.clicked.connect(self.editor.replace_one)
+        b_all.clicked.connect(self.editor.replace_all)
         self.find.installEventFilter(self)
         self.repl.installEventFilter(self)
         self.hide()
@@ -335,121 +324,60 @@ class FindBar(QFrame):
                 return True
             if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and obj is self.find \
                     and event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-                self.step(True)
+                self.editor.step_find(True)
                 return True
         return super().eventFilter(obj, event)
 
     def open_bar(self, replace=False):
-        sel = self.edit.textCursor().selectedText()
+        sel = self.editor.text.textCursor().selectedText()
         if sel and "\u2029" not in sel:
             self.find.setText(sel)
         self.row2.setVisible(replace)
         self.show()
         self.find.setFocus()
         self.find.selectAll()
-        self._refresh()
+        self.editor.refresh_find()
 
     def close_bar(self):
         self.hide()
-        self.edit.set_search_highlights([])
-        self.edit.setFocus()
-
-    def _flags(self):
-        return QTextDocument.FindFlag.FindCaseSensitively if self.case.isChecked() else QTextDocument.FindFlag(0)
-
-    def _all_matches(self, limit=5000):
-        text, out = self.find.text(), []
-        if not text:
-            return out
-        doc, flags = self.edit.document(), self._flags()
-        c = QTextCursor(doc)
-        while len(out) < limit:
-            c = doc.find(text, c, flags)
-            if c.isNull():
-                break
-            out.append((c.selectionStart(), c.selectionEnd()))
-        return out
-
-    def _refresh(self, select=False):
-        matches = self._all_matches()
-        self.edit.set_search_highlights(matches)
-        if select and matches:
-            pos = self.edit.textCursor().selectionStart()
-            hit = next((m for m in matches if m[0] >= pos), matches[0])
-            c = self.edit.textCursor()
-            c.setPosition(hit[0])
-            c.setPosition(hit[1], QTextCursor.MoveMode.KeepAnchor)
-            self.edit.setTextCursor(c)
-            self.edit.centerCursor()
-        cur = self.edit.textCursor().selectionStart()
-        idx = next((i + 1 for i, m in enumerate(matches) if m[0] == cur), 0)
-        self.count.setText("" if not self.find.text() else
-                           ("No results" if not matches else f"{idx or '–'} / {len(matches)}"))
-        self.find.setStyleSheet("border-color: #f38ba8;" if self.find.text() and not matches else "")
-
-    def step(self, backwards):
-        text = self.find.text()
-        if not text:
-            return
-        flags = self._flags()
-        if backwards:
-            flags |= QTextDocument.FindFlag.FindBackward
-        if not self.edit.find(text, flags):
-            c = self.edit.textCursor()
-            c.movePosition(QTextCursor.MoveOperation.End if backwards else QTextCursor.MoveOperation.Start)
-            self.edit.setTextCursor(c)
-            self.edit.find(text, flags)
-        self.edit.centerCursor()
-        self._refresh()
-
-    def replace_one(self):
-        c = self.edit.textCursor()
-        sel, text = c.selectedText(), self.find.text()
-        if c.hasSelection() and (sel == text if self.case.isChecked() else sel.lower() == text.lower()):
-            c.insertText(self.repl.text())
-        self.step(False)
-
-    def replace_all(self):
-        text = self.find.text()
-        if not text:
-            return
-        doc, flags = self.edit.document(), self._flags()
-        c = QTextCursor(doc)
-        n = 0
-        c.beginEditBlock()
-        while True:
-            c = doc.find(text, c, flags)
-            if c.isNull():
-                break
-            c.insertText(self.repl.text())
-            n += 1
-        c.endEditBlock()
-        self._refresh()
-        self.count.setText(f"{n} replaced")
+        self.editor.text.set_search_highlights([])
+        self.editor.text.setFocus()
 
 
 class LspSignals(QObject):
     completions_ready = pyqtSignal(list)
 
-# Main Codeviewer's module logic and widget implementation
 
 class AntimatterEditor(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setStyleSheet("background-color: #19191a; border-radius=7px;")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet("background-color: #19191a; border-radius: 7px;")
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
         self.text = AntimatterTextEdit(self)
-        self.findbar = FindBar(self.text)
+        self.findbar = FindBar(self)
 
         layout.addWidget(self.findbar)
         layout.addWidget(self.text)
 
         self.highlighter = None
         self._current_file_path = None
+
+        # Setup sandbox-friendly recovery cache (~/.cache/antimatter/recovery/)
+        base_cache = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
+        self.cache_dir = Path(base_cache) / "antimatter" / "recovery"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.cache_file = None
+
+        # 5-second debounce timer for typing inactivity auto-save
+        self.auto_save_timer = QTimer(self)
+        self.auto_save_timer.setSingleShot(True)
+        self.auto_save_timer.setInterval(5000)
+        self.auto_save_timer.timeout.connect(self.write_to_cache)
 
         self.lsp = LspClient()
         self.loop = asyncio.new_event_loop()
@@ -461,6 +389,7 @@ class AntimatterEditor(QFrame):
         self.text.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.text.customContextMenuRequested.connect(self._show_context_menu)
         self.text.textChanged.connect(self._on_text_changed)
+        self.text.document().contentsChanged.connect(self._on_document_changed)
         
         self.text.installEventFilter(self)
         self.comp_popup = None
@@ -470,21 +399,176 @@ class AntimatterEditor(QFrame):
         self._current_file_path = file_path
         ext = os.path.splitext(file_path)[1].lower() if file_path else ""
 
+        if file_path:
+            file_hash = hashlib.md5(file_path.encode('utf-8')).hexdigest()[:8]
+            clean_name = Path(file_path).name
+            self.cache_file = self.cache_dir / f"{clean_name}_{file_hash}.recovery"
+        else:
+            self.cache_file = self.cache_dir / "unsaved_scratch.py.recovery"
+
         if self.highlighter:
             self.highlighter.setDocument(None)
             self.highlighter = None
+            self.text.highlighter = None
 
         if ext == ".py":
             self.highlighter = PythonHighlighter(self.text.document())
+            self.text.highlighter = self.highlighter
             self.text.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         elif ext in (".md", ".markdown"):
             self.highlighter = MarkdownHighlighter(self.text.document())
+            self.text.highlighter = self.highlighter
             self.text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
         else:
+            self.text.highlighter = None
             self.text.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+
+    def write_to_cache(self):
+        if not self.cache_file:
+            return
+        content = self.text.toPlainText()
+        try:
+            self.cache_file.write_text(content, encoding="utf-8")
+        except Exception as e:
+            print(f"[Antimatter] Recovery write error: {e}")
+
+    def clear_cache(self):
+        if self.cache_file and self.cache_file.exists():
+            try:
+                self.cache_file.unlink()
+            except Exception:
+                pass
+
+    def reload_from_cache(self):
+        if not self.cache_file or not self.cache_file.exists():
+            return
+        try:
+            cached_text = self.cache_file.read_text(encoding="utf-8")
+            
+            cursor = self.text.textCursor()
+            pos = cursor.position()
+            anchor = cursor.anchor()
+            
+            v_scroll = self.text.verticalScrollBar().value()
+            h_scroll = self.text.horizontalScrollBar().value()
+            
+            self.text.setPlainText(cached_text)
+            
+            max_len = len(cached_text)
+            cursor.setPosition(min(anchor, max_len))
+            if pos != anchor:
+                cursor.setPosition(min(pos, max_len), QTextCursor.MoveMode.KeepAnchor)
+            else:
+                cursor.setPosition(min(pos, max_len))
+            self.text.setTextCursor(cursor)
+            
+            self.text.verticalScrollBar().setValue(v_scroll)
+            self.text.horizontalScrollBar().setValue(h_scroll)
+            
+            if self.highlighter:
+                self.highlighter.rehighlight()
+        except Exception as e:
+            print(f"[Antimatter] Cache reload error: {e}")
 
     def open_find(self, replace=False):
         self.findbar.open_bar(replace)
+
+    def _find_flags(self):
+        return QTextDocument.FindFlag.FindCaseSensitively if self.findbar.case.isChecked() else QTextDocument.FindFlag(0)
+
+    def _all_matches(self, limit=5000):
+        text, out = self.findbar.find.text(), []
+        if not text:
+            return out
+        doc, flags = self.text.document(), self._find_flags()
+        c = QTextCursor(doc)
+        while len(out) < limit:
+            c = doc.find(text, c, flags)
+            if c.isNull():
+                break
+            out.append((c.selectionStart(), c.selectionEnd()))
+        return out
+
+    def refresh_find(self, select=False):
+        matches = self._all_matches()
+        self.text.set_search_highlights(matches)
+        if select and matches:
+            pos = self.text.textCursor().selectionStart()
+            hit = next((m for m in matches if m[0] >= pos), matches[0])
+            c = self.text.textCursor()
+            c.setPosition(hit[0])
+            c.setPosition(hit[1], QTextCursor.MoveMode.KeepAnchor)
+            self.text.setTextCursor(c)
+            self.text.centerCursor()
+        cur = self.text.textCursor().selectionStart()
+        idx = next((i + 1 for i, m in enumerate(matches) if m[0] == cur), 0)
+        self.findbar.count.setText("" if not self.findbar.find.text() else
+                                   ("No results" if not matches else f"{idx or '–'} / {len(matches)}"))
+        self.findbar.find.setStyleSheet("border-color: #f38ba8;" if self.findbar.find.text() and not matches else "")
+
+    def step_find(self, backwards):
+        text = self.findbar.find.text()
+        if not text:
+            return
+        flags = self._find_flags()
+        if backwards:
+            flags |= QTextDocument.FindFlag.FindBackward
+        if not self.text.find(text, flags):
+            c = self.text.textCursor()
+            c.movePosition(QTextCursor.MoveOperation.End if backwards else QTextCursor.MoveOperation.Start)
+            self.text.setTextCursor(c)
+            self.text.find(text, flags)
+        self.text.centerCursor()
+        self.refresh_find()
+
+    def replace_one(self):
+        c = self.text.textCursor()
+        sel, text = c.selectedText(), self.findbar.find.text()
+        if c.hasSelection() and (sel == text if self.findbar.case.isChecked() else sel.lower() == text.lower()):
+            c.insertText(self.findbar.repl.text())
+            self.write_to_cache()
+        self.step_find(False)
+
+    def replace_all(self):
+        text = self.findbar.find.text()
+        if not text:
+            return
+            
+        content = self.text.toPlainText()
+        repl_text = self.findbar.repl.text()
+
+        if self.findbar.case.isChecked():
+            n = content.count(text)
+            new_content = content.replace(text, repl_text)
+        else:
+            pattern = re.compile(re.escape(text), re.IGNORECASE)
+            matches = pattern.findall(content)
+            n = len(matches)
+            new_content = pattern.sub(repl_text, content)
+            
+        if n == 0:
+            self.findbar.count.setText("No results")
+            return
+
+        cursor = self.text.textCursor()
+        pos = cursor.position()
+        anchor = cursor.anchor()
+
+        self.text.setUpdatesEnabled(False)
+        self.text.setPlainText(new_content)
+        self.text.setUpdatesEnabled(True)
+        max_len = len(new_content)
+        cursor.setPosition(min(anchor, max_len))
+        if pos != anchor:
+            cursor.setPosition(min(pos, max_len), QTextCursor.MoveMode.KeepAnchor)
+        else:
+            cursor.setPosition(min(pos, max_len))
+        self.text.setTextCursor(cursor)
+
+        self.findbar.count.setText(f"{n} replaced")
+
+        self.write_to_cache()
+        self.findbar.close_bar()
 
     def eventFilter(self, obj, event):
         if obj == self.text and event.type() == event.Type.KeyPress:
@@ -529,10 +613,17 @@ class AntimatterEditor(QFrame):
         asyncio.run_coroutine_threadsafe(init_sequence(), self.loop)
 
     def _on_text_changed(self):
+        self.text.set_search_highlights([])
+        self.auto_save_timer.start()
+
         if not self.lsp.running:
             return
         content = self.text.toPlainText()
         asyncio.run_coroutine_threadsafe(self.lsp.did_change(content), self.loop)
+
+    def _on_document_changed(self):
+        if self.findbar.isVisible() and self.findbar.find.text():
+            self.refresh_find(select=False)
 
     def show_completions(self):
         if not self.lsp.running:
@@ -567,7 +658,7 @@ class AntimatterEditor(QFrame):
                 background-color: #181825;
                 color: #cdd6f4;
                 border: 1px solid #313244;
-                border-radius=7px;
+                border-radius: 7px;
             }
             QListWidget::item:selected {
                 background-color: #313244;
@@ -600,7 +691,6 @@ class AntimatterEditor(QFrame):
         if self.comp_popup:
             self.comp_popup.close()
 
-    # Context Menu for Copy-paste and stuff
     def _show_context_menu(self, pos):
         menu = QMenu(self)
         menu.setStyleSheet("""
@@ -608,7 +698,6 @@ class AntimatterEditor(QFrame):
                 background-color: #181825;
                 color: #cdd6f4;
                 border: 1px solid #313244;
-                border-radius=7px
             }
             QMenu::item:selected {
                 background-color: #313244;
@@ -653,7 +742,6 @@ class AntimatterEditor(QFrame):
         else:
             pass
         menu.exec(self.text.mapToGlobal(pos))
-
 
     def _show_git_status(self):
         if not self._current_file_path:

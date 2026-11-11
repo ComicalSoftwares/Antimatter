@@ -4,19 +4,18 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
-  <name>Antimatter Lite</name>
+  <name>Antimatter</name>
   <summary>Code in Python. Not in Bloat.</summary>
   <description>
     <p>
         Antimatter is a Python IDE designed to run smoothly on as many devices as possible without having the bloat other big/popular IDEs tend to have.
-        This is the light version of the OG project, it can only edit/run python/markdown files to be flathub-compilant.
+        This edition of the IDE can only edit scripts and help you debug it. To get all features, please get the executable from the github repository.
         This IDE features the following functions:
     </p>
         <ul>
           <li>A Distraction-free interface. No popups, everything is on-demand</li>
           <li>Editing Python/Markdown Files</li>
           <li>Full Discord Rich Presence Support</li>
-          <li>Automatic .venv environments setup</li>
           <li>Actually Good performance</li>
           <li>A sleek, PyQT6 Interface built from the ground up to beautifully integrate with the KDE Plasme environment</li>
           <li>Quickly find the bugs that stop you from running your .py scripts (Powered by PyFlakes)</li>
@@ -75,15 +74,16 @@
   </screenshots>
 
   <releases>
-    <release version="1.7" date="2026-11-08">
+    <release version="1.7" date="2026-11-10">
       <description translate="no">
         <p>Antimatter is now on Flathub !</p>
         <ul>
           <li>Major UI improvements.</li>
           <li>Code viewer now supports Markdown syntax highlighting.</li>
           <li>Added "Open folder" function.</li>
-          <li>Discord RPC Improvements</li>
-          <li>And so much more.. ;)</li>
+          <li>Discord RPC Improvements.</li>
+          <li>Fixed a ton of leaks and bugs.</li>
+          <li>Improved the code editing experience.</li>
         </ul>
       </description>
     </release>

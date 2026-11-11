@@ -6,7 +6,7 @@ import termios
 import re
 from pathlib import Path
 from PyQt6.QtCore import QSocketNotifier, Qt
-from PyQt6.QtGui import QTextCursor, QTextCharFormat, QColor, QFont
+from PyQt6.QtGui import QTextCursor, QTextCharFormat, QColor, QFont, QGuiApplication
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QPlainTextEdit, QMenu
 import task
 
@@ -18,6 +18,7 @@ COMBINED_ESCAPE = re.compile(r'''
 ''', re.VERBOSE)
 
 PROMPT_PATTERN = re.compile(r'\[[\w\-]+@[\w\-]+\s+[^\]]+\][\$#]')
+SUDO_PROMPT_PATTERN = re.compile(r'(?i)\[sudo\] password for .*:|password:')
 
 class NativeTerminalWidget(QPlainTextEdit):
     def __init__(self, parent=None):
@@ -35,6 +36,7 @@ class NativeTerminalWidget(QPlainTextEdit):
         self.notifier = None
         self.current_format = QTextCharFormat()
         self.input_start_pos = 0
+        self.is_password_prompt = False
         self.init_terminal()
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_context_menu)
@@ -83,6 +85,11 @@ class NativeTerminalWidget(QPlainTextEdit):
     def append_ansi_text(self, text):
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
+
+        if SUDO_PROMPT_PATTERN.search(text):
+            self.is_password_prompt = True
+        elif "\n" in text or "\r" in text:
+            self.is_password_prompt = False
         
         i = 0
         n = len(text)
@@ -146,7 +153,36 @@ class NativeTerminalWidget(QPlainTextEdit):
 
     def keyPressEvent(self, event):
         key = event.key()
+        modifiers = event.modifiers()
         cursor = self.textCursor()
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            if modifiers & Qt.KeyboardModifier.ShiftModifier:
+                if key == Qt.Key.Key_C:
+                    self.copy()
+                    event.accept()
+                    return
+                elif key == Qt.Key.Key_V:
+                    self.paste()
+                    event.accept()
+                    return
+                elif key == Qt.Key.Key_X:
+                    self.cut()
+                    event.accept()
+                    return
+                elif key == Qt.Key.Key_A:
+                    self.selectAll()
+                    event.accept()
+                    return
+            elif key == Qt.Key.Key_C:
+                if self.master_fd is not None:
+                    try:
+                        os.write(self.master_fd, b"\x03")
+                    except OSError:
+                        pass
+                elif hasattr(self, "process"):
+                    self.process.write(b"\x03")
+                event.accept()
+                return
 
         if sys.platform == "win32":
             super().keyPressEvent(event)
@@ -156,6 +192,7 @@ class NativeTerminalWidget(QPlainTextEdit):
         if self.master_fd is not None:
             try:
                 if key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
+                    self.is_password_prompt = False
                     os.write(self.master_fd, b"\n")
                     cursor.movePosition(QTextCursor.MoveOperation.End)
                     self.setTextCursor(cursor)
@@ -182,11 +219,24 @@ class NativeTerminalWidget(QPlainTextEdit):
                 else:
                     text = event.text()
                     if text and text.isprintable():
-                        cursor.insertText(text, self.current_format)
+                        if not self.is_password_prompt:
+                            cursor.insertText(text, self.current_format)
                         os.write(self.master_fd, text.encode("utf-8"))
             except OSError:
                 pass
         event.accept()
+
+    def paste(self):
+        clipboard = QGuiApplication.clipboard()
+        text = clipboard.text()
+        if text and self.master_fd is not None:
+            try:
+                cursor = self.textCursor()
+                if not self.is_password_prompt:
+                    cursor.insertText(text, self.current_format)
+                os.write(self.master_fd, text.encode("utf-8"))
+            except OSError:
+                pass
 
     def write_command(self, cmd: str):
         if sys.platform != "win32" and self.master_fd is not None:
@@ -213,11 +263,11 @@ class NativeTerminalWidget(QPlainTextEdit):
             }
         """)
 
-        copy_act = menu.addAction("Copy\tCtrl + C")
+        copy_act = menu.addAction("Copy\tCtrl + Shift + C")
         copy_act.triggered.connect(self.copy)
         cut_act = menu.addAction("Cut\tCtrl + X")
         cut_act.triggered.connect(self.cut)
-        paste_act = menu.addAction("Paste\tCtrl + V")
+        paste_act = menu.addAction("Paste\tCtrl + Shift + V")
         paste_act.triggered.connect(self.paste)
         
         menu.addSeparator()

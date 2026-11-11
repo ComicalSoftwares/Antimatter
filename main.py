@@ -37,7 +37,6 @@ RPC_START_TIME = time.time()
 is_custom=False
 
 def update_rpc(filename=None, is_file_path=True):
-    global is_custom
     if is_custom or not RPC:
         return
     try:
@@ -175,7 +174,7 @@ class AntimatterApp(QMainWindow):
                 border: none;
                 width: 0px;
                 height: 0px;
-                border-radius=7px;
+                border-radius: 7px;
             }
         """)
 
@@ -349,8 +348,15 @@ class AntimatterApp(QMainWindow):
 
         menu = QMenu(self)
         menu.setStyleSheet("""
-            QMenu { background-color: #181825; color: #cdd6f4; border: 1px solid #313244; }
-            QMenu::item:selected { background-color: #313244; }
+            QMenu {
+                background-color: #181825;
+                color: #cdd6f4;
+                border: 1px solid #313244;
+            }
+            QMenu::item:selected {
+                background-color: #313244;
+                color: white;
+            }
             QMenu::separator {
                 height: 1px;
                 background-color: #89b4fa;

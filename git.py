@@ -1,6 +1,7 @@
 import subprocess
 import os
 from PyQt6.QtWidgets import QFileDialog, QMessageBox, QInputDialog, QDialog, QVBoxLayout, QPushButton, QTextBrowser
+from PyQt6.QtGui import QIcon
 import re
 import html
 from pathlib import Path
