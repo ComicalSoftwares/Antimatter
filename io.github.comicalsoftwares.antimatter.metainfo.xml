@@ -84,7 +84,8 @@
         <ul>
           <li>Fixed function "Check for updates" where it would fail to fetch updates.</li>
           <li>Updated Contributors list in "About Antimatter".</li> 
-          <li>Now the version in "About Antimatter" and in the welcome screen syncs with release tag</li>       
+          <li>Now the version in "About Antimatter" and in the welcome screen syncs with release tag.</li>
+          <li>Removed rounded corners on some menus as they cause artifacts on older GPUs.</li>   
         </ul>
       </description>
     </release>
