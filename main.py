@@ -570,10 +570,10 @@ class AntimatterApp(QMainWindow):
         tools_menu = menubar.addMenu("Tools")
         if not is_sandboxed:
             tools_menu.addAction("Set up .venv environment", util.project)
+            tools_menu.addAction("Check for updates", util.update)
+            tools_menu.addSeparator()
         else:
             pass
-        tools_menu.addAction("Check for updates", util.update)
-        tools_menu.addSeparator()
         tools_menu.addAction("Refresh Discord RPC", discord)
         tools_menu.addAction("Set custom Discord RPC Status", custom)
         tools_menu.addSeparator()
