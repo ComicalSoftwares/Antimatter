@@ -5,20 +5,20 @@
   <project_license>MIT</project_license>
 
   <name>Antimatter</name>
-  <summary>Code in Python. Not in Bloat.</summary>
+  <summary>A lightweight Python and Markdown code editor</summary>
   <description>
     <p>
-        Antimatter is a Python IDE designed to run smoothly on as many devices as possible without having the bloat other big/popular IDEs tend to have.
-        This edition of the IDE can only edit scripts and help you debug it. To get all features, please get the executable from the github repository.
-        This IDE features the following functions:
+        Antimatter is a Python and Markdown IDE designed to run smoothly on your computer without suffering from the bloat other IDEs tend to have.
+        This edition of the editor focuses only on editing files and help you debug them.
+        The editor features the following functions:
     </p>
         <ul>
-          <li>A Distraction-free interface. No popups, everything is on-demand</li>
-          <li>Editing Python/Markdown Files</li>
-          <li>Full Discord Rich Presence Support</li>
-          <li>Actually good performance when editing</li>
-          <li>A sleek, PyQT6 Interface built from the ground up to beautifully integrate with the KDE Plasma desktop environment</li>
-          <li>Quickly find the bugs that stop you from running your .py scripts (Powered by PyFlakes)</li>
+          <li>A Distraction-free interface.</li>
+          <li>Ability to comfortably edit Python and Markdown documents.</li>
+          <li>Full Discord Rich Presence Support.</li>
+          <li>Lightweight and responsive UI.</li>
+          <li>A sleek, PyQT6 Interface built from the ground up to beautifully integrate with the KDE Plasma desktop environment.</li>
+          <li>Quickly find the bugs that stop you from running your Python scripts.</li>
         </ul>
   </description>
 
@@ -58,31 +58,35 @@
 
   <!-- Applications should set a brand color in both light and dark variants like so -->
   <branding>
-    <color type="primary" scheme_preference="light">#8f34eb</color>
-    <color type="primary" scheme_preference="dark">#8f34eb</color>
+    <color type="primary" scheme_preference="light">#9141ac</color>
+    <color type="primary" scheme_preference="dark">#5a2276</color>
   </branding>
 
   <screenshots>
     <screenshot type="default">
-      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/welcome.png?raw=true</image>
-      <caption>Screenshot of the welcome screen</caption>
+      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Flathub/Edit.png?raw=true</image>
+      <caption>Editing a python script.</caption>
     </screenshot>
-    <screenshot type="default">
-      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/action.png?raw=true</image>
-      <caption>Editing a script</caption>
+    <screenshot>
+      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Flathub/Edit2.png?raw=true</image>
+      <caption>Editing another python script.</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Flathub/md.png?raw=true</image>
+      <caption>Editing a Markdown document.</caption>
     </screenshot>
   </screenshots>
 
   <releases>
-    <release version="1.7" date="2026-11-10">
+    <release version="1.7" date="2026-11-11">
       <description translate="no">
         <p>Antimatter is now on Flathub !</p>
         <ul>
           <li>Major UI improvements.</li>
           <li>Code viewer now supports Markdown syntax highlighting.</li>
           <li>Added "Open folder" function.</li>
-          <li>Discord RPC Improvements.</li>
-          <li>Fixed a ton of leaks and bugs.</li>
+          <li>Discord RPC Improvements + Addition of custom RPC status.</li>
+          <li>Fixed a lotleaks and bugs.</li>
           <li>Improved the code editing experience.</li>
         </ul>
       </description>
