@@ -48,13 +48,9 @@ These components are:
 >[!Note]
 > These screenshots are not definitive and will indeed change as the IDE grows.
 
-<img width="1920" height="1080" alt="Welcome Screen" src="https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Full/welcome.png?raw=true" />
-
-<img width="1920" height="1080" alt="Editing a Python Script" src="https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Full/EDIT.png?raw=true" />
-
-<img width="1920" height="1080" alt="Editing a Markdown Document" src="https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Full/MD.png?raw=true" />
-
-
+<img width="1180" height="808" alt="Welcome Screen" src="https://github.com/user-attachments/assets/c8a20a9e-023a-45dd-97ab-766e819acbb6" />
+<img width="1180" height="808" alt="Editing a Python Script" src="https://github.com/user-attachments/assets/88b86d99-f9f1-47b5-a7cb-170a8f0c679e" />
+<img width="1180" height="808" alt="Editing a Markdown Document" src="https://github.com/user-attachments/assets/48983751-b1f8-4611-9004-c669f46d349b" />
 
 ## Features roadmap
 Antimatter is an evolving IDE that targets to satisfy multiple needs !
