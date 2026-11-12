@@ -68,7 +68,7 @@
       <caption>Editing a python script.</caption>
     </screenshot>
     <screenshot>
-      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Flathub/Edit2.png?raw=true</image>
+      <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Flathub/edit2.png?raw=true</image>
       <caption>Editing another python script.</caption>
     </screenshot>
     <screenshot>
@@ -78,9 +78,14 @@
   </screenshots>
 
   <releases>
-    <release version="1.7.1" date="2026-11-11">
+    <release version="1.7.1" date="2026-11-12">
       <description translate="no">
-        <p></p>
+        <p>Small improvements.</p>
+        <ul>
+          <li>Fixed function "Check for updates" where it would fail to fetch updates.</li>
+          <li>Updated Contributors list in "About Antimatter".</li> 
+          <li>Now the version in "About Antimatter" and in the welcome screen syncs with release tag</li>       
+        </ul>
       </description>
     </release>
     <release version="1.7" date="2026-11-11">
