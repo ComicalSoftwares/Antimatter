@@ -226,7 +226,7 @@ class AntimatterApp(QMainWindow):
         welcome_layout.addWidget(center_container)
         welcome_layout.addStretch()
 
-        footer_label = QLabel("Version 1.7 - Alpha")
+        footer_label = QLabel(f"Version {util.CURRENT_VERSION} - Alpha")
         footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer_label.setStyleSheet("color: #8a79a3; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
         footer_label2 = QLabel("This project is open-source and licensed under the MIT license.")
@@ -486,7 +486,7 @@ class AntimatterApp(QMainWindow):
                 else:
                     os.remove(path)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete:\n{e}")
+                QMessageBox.critical(self, "Error", f"Failed to delete item:\n{e}")
 
     def _tree_show_in_explorer(self, path):
         if platform.system() == "Windows":

@@ -7,7 +7,7 @@ A modern, lightweight and absurdly optimized Python IDE written in **Python and 
 </div>
 
 > [!WARNING]
-> Antimatter's current development status is in **early alpha**. While totally usable as a daily driver, we do not recommend you to uninstall your current IDE yet. If you really want to 100% switch then at least wait for it to pass to **Beta stage**.. (which will indeed take a while). You can still switch now, but don't expect it to be perfect yet !
+> Antimatter's current development status is in **BETA**. While totally usable as a daily driver, we do not recommend you to uninstall your current IDE yet. You can still switch now, but don't expect it to be perfect.. yet !
 
 ## Features
 - Editing and running python scripts
@@ -23,9 +23,9 @@ A modern, lightweight and absurdly optimized Python IDE written in **Python and 
 ## Download today !
 Antimatter is free & open-source ! _(Obviously !)_
 
-### Latest release: Version 1.6 - Alpha
-- **Windows installer**: [antimatter_setup.exe](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.6/antimatter_setup.exe)
-- **Linux**: Learn how to [build from source.](https://github.com/ComicalSoftwares/Antimatter/wiki/Quick-Start-Guide/#installation)
+### Latest release: Version 1.7.1 - BETA
+- **Windows installer**: 1.6 (`R.I.P` _We recently dropped support for Windows._) [antimatter_setup.exe](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.6/antimatter_setup.exe)
+- **Linux**: [1.7.1](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.7.1)
 
 ## Libraries and ressources used
 - **UI**: PyQT6 & PySide6
@@ -40,7 +40,7 @@ Antimatter relies on separately installed components/modules to function properl
 These components are:
 - **Pyflakes**: For finding issues
 - **A working PC**: What ? You thought it was gonna work on a phone ? Be real.
-- **Python 3.14**: This is the most recommended version. You can also use any other Python 3.x release with Antimatter, just don't use anything as old as Python 2.x or else the editor will corrupt your files and fail to render them.
+- **Python 3.14 or newer**: This is the most recommended version. You can also use any other Python 3.x release with Antimatter, just don't use anything as old as Python 2 or else the editor will fail to render their syntax and might corrupt them.
 - **A compiler (optional)**: If you ship production-ready apps using python, then it is better to have something like "pyinstaller" or "nuitka" installed.
 - **Windows/Linux as your main OS**: You need to use Windows/Linux to run Antimatter. You can build the software from source for your OS but we'll provide no form of support in that case (especially with macOS users).
 
@@ -48,11 +48,11 @@ These components are:
 >[!Note]
 > These screenshots are not definitive and will indeed change as the IDE grows.
 
-<img width="1920" height="1080" alt="Screenshot From 2026-10-10 15-04-57" src="https://github.com/user-attachments/assets/459266d2-c7c0-4cbb-85a4-46940d4834b2" />
+<img width="1920" height="1080" alt="Welcome Screen" src="https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Full/welcome.png?raw=true" />
 
-<img width="1920" height="1080" alt="Screenshot From 2026-10-11 12-52-13" src="https://github.com/user-attachments/assets/821a88e0-62b6-469e-b66f-f5d7005e8798" />
+<img width="1920" height="1080" alt="Editing a Python Script" src="https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Full/EDIT.png?raw=true" />
 
-https://github.com/user-attachments/assets/9cc0926d-c950-440e-9c72-0af109c88957
+<img width="1920" height="1080" alt="Editing a Markdown Document" src="https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Full/MD.png?raw=true" />
 
 
 
@@ -70,7 +70,7 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] Issues finder.
 - [X] Tabs.
 - [X] Editing Markdown. _(Can't preview tho, which is not something I plan to add)_
-- [ ] LSP and suggestions **(Exists and works but not reliable yet)**
+- [X] LSP and suggestions **(BETA - Needs more Work)**
 ### Debugging and managing projects
 - [X] File manager.
 - [X] Live terminal (Beta, needs some work)
@@ -86,10 +86,9 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] Git commit
 - [X] Git Push
 - [X] Git Sync
-And all of the other essential git functions
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:
-- **Discord** (Fastest way of getting support): Visit our home discord server. Suggest, discuss, ask for help and learn about other fun projects we work on ! [Join "Comical Games" on Discord](https://discord.gg/UubHnUNEc7)
-- **Wiki** (Contains useful information): We took the time to explain how to use Antimatter and what to expect from the IDE. [Read Antimatter's wiki.](https://github.com/ComicalSoftwares/Antimatter/wiki/Quick-Start-Guide)
-- **Github issues** (Slowest way of getting support, manly for bug reports): Github issues is also a good way to get support, but its the slowest method of doing so. You can also use it to report bugs.
+- **Discord** (Fastest way of getting support): Visit our home discord server. Suggest, discuss, ask for help and learn about other fun projects we work on ! [Join our Discord server named "Comical Games" !](https://discord.gg/UubHnUNEc7)
+- **Wiki** (Contains useful information): We took the time to explain how to use Antimatter and what to expect from the IDE. [Click here to read Antimatter's wiki !](https://github.com/ComicalSoftwares/Antimatter/wiki/Quick-Start-Guide)
+- **Github issues** (Bug Tracker): Github issues is also a good way to get support, but its mainly for tracking and reporting bugs.

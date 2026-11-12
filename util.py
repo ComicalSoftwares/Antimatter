@@ -13,7 +13,7 @@ from pathlib import Path
 from PyQt6.QtCore import Qt
 import html
 
-CURRENT_VERSION = "1.7" # The new fire release
+CURRENT_VERSION = "1.7.1" # The new fire release
 BASE_DIR = Path(__file__).resolve().parent
 
 def project():
@@ -119,7 +119,7 @@ def about_window(content, is_html=False):
     title_label = QLabel("Comical Antimatter")
     title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title_label.setStyleSheet("color: white; font-family: 'Consolas', 'Cantarell'; font-size: 30px; font-weight: bold; background: transparent;")
-    footer_label = QLabel("Version 1.7 - Alpha")
+    footer_label = QLabel(f"Version {CURRENT_VERSION} - Alpha")
     footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     footer_label.setStyleSheet("color: #8a79a3; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
     footer_label2 = QLabel("This project is open-source and licensed under the MIT license.")
