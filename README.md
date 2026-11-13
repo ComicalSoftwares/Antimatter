@@ -84,6 +84,6 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:
-- **Discord** (Fastest way of getting support): Visit our home discord server. Suggest, discuss, ask for help and learn about other fun projects we work on ! [Join our Discord server named "Comical Games" !](https://discord.gg/UubHnUNEc7)
+- **Discord** (Fastest way of getting support): Visit our home discord server. Suggest, discuss, ask for help and learn about other fun projects we work on ! [Join our Discord server named "Comical Games" (Yes, we also make games).](https://discord.gg/UubHnUNEc7)
 - **Wiki** (Contains useful information): We took the time to explain how to use Antimatter and what to expect from the IDE. [Click here to read Antimatter's wiki !](https://github.com/ComicalSoftwares/Antimatter/wiki/Quick-Start-Guide)
 - **Github issues** (Bug Tracker): Github issues is also a good way to get support, but its mainly for tracking and reporting bugs.
