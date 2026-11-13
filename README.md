@@ -76,7 +76,6 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [ ] Themes
 - [ ] Custom fonts
 - [ ] Modify position of the sidebar (File Manager) **(Exists but it doesn't save the new position)**
-- [ ] Extensions
 ### Git support
 - [X] Git clone
 - [X] Git commit
