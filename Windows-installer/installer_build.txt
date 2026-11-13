@@ -1,1 +1,0 @@
-pyinstaller --noconfirm --onefile --windowed --icon "AppIcon.png" --name "setup" --add-data "AppIcon.ico;." --add-data "AppIcon.png;." window.py

@@ -21,18 +21,18 @@
             "buildsystem": "simple",
             "build-commands": [
                 "mkdir -p /app/lib/antimatter /app/bin /app/share/applications /app/share/metainfo /app/share/icons/hicolor/512x512/apps",
-                "cp *.py AppIcon.png about.txt /app/lib/antimatter/",
+                "cp src/*.py src/AppIcon.png src/about.txt /app/lib/antimatter/",
                 "install -Dm755 wrapper /app/bin/antimatter",
-                "install -Dm644 io.github.comicalsoftwares.antimatter.desktop /app/share/applications/io.github.comicalsoftwares.antimatter.desktop",
-                "install -Dm644 io.github.comicalsoftwares.antimatter.metainfo.xml /app/share/metainfo/io.github.comicalsoftwares.antimatter.metainfo.xml",
-                "install -Dm644 AppIcon.png /app/share/icons/hicolor/512x512/apps/io.github.comicalsoftwares.antimatter.png"
+                "install -Dm644 Flatpak/io.github.comicalsoftwares.antimatter.desktop /app/share/applications/io.github.comicalsoftwares.antimatter.desktop",
+                "install -Dm644 Flatpak/io.github.comicalsoftwares.antimatter.metainfo.xml /app/share/metainfo/io.github.comicalsoftwares.antimatter.metainfo.xml",
+                "install -Dm644 src/AppIcon.png /app/share/icons/hicolor/512x512/apps/io.github.comicalsoftwares.antimatter.png"
             ],
             "sources": [
                 {
                     "type": "git",
                     "url": "https://github.com/ComicalSoftwares/Antimatter.git",
-                    "tag": "1.7.1",
-                    "commit": "b2cc2198fcae09395b1e1b5c6908113b57e30d51"
+                    "tag": "1.7-Patch1",
+                    "commit": "9549d0e32e6c9e9ebf92b0bfafb7ba569aed0986"
                 }
             ]
         }

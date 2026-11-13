@@ -13,7 +13,7 @@ from pathlib import Path
 from PyQt6.QtCore import Qt
 import html
 
-CURRENT_VERSION = "1.7.1" # The new fire release
+CURRENT_VERSION = "1.8" # The new fire release
 BASE_DIR = Path(__file__).resolve().parent
 
 def project():

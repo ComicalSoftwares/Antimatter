@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QFrame, QVBoxLayout, QLabel, QLineEdit, QToolButton
 )
 from lsp import LspClient
-import git
+import git as Git
 import theme
 import builtins
 import keyword
@@ -138,10 +138,8 @@ class MarkdownHighlighter(QSyntaxHighlighter):
 class AntimatterTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
-        global sandboxed
-        sandboxed = task.is_sandboxed()
         self.font_family = "Consolas"
-        self.font_size = 13
+        self.font_size = 12
         self.highlighter = None
         
         self.setFont(QFont(self.font_family, self.font_size))
@@ -728,23 +726,12 @@ class AntimatterEditor(QFrame):
         comp_act = menu.addAction("Show Completions")
         comp_act.triggered.connect(self.show_completions)
         
-        if not sandboxed:
+        if not task.is_sandboxed():
             menu.addSeparator()
-            diff_act = menu.addAction("View this file's Git Diff")
-            diff_act.triggered.connect(lambda: git.show_file_diff(self._current_file_path))
-            blame_act = menu.addAction("View this file's Git Blame")
-            blame_act.triggered.connect(lambda: git.show_file_blame(self._current_file_path))
-            status_act = menu.addAction("View Git Status")
-            status_act.triggered.connect(self._show_git_status)
+            git = menu.addAction("View Git Dashboard\tCtrl + G", lambda: Git.open_git_manager(self))
         else:
             pass
         menu.exec(self.text.mapToGlobal(pos))
-
-    def _show_git_status(self):
-        if not self._current_file_path:
-            return
-        root_dir = os.path.dirname(os.path.abspath(self._current_file_path))
-        status_output = git.get_status(root_dir)
 
     def get(self, start="0.0", end="end-1c"):
         return self.text.toPlainText()

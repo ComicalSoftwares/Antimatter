@@ -4,13 +4,9 @@ import pty
 import fcntl
 import termios
 import re
-from pathlib import Path
 from PyQt6.QtCore import QSocketNotifier, Qt
 from PyQt6.QtGui import QTextCursor, QTextCharFormat, QColor, QFont, QGuiApplication
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QPlainTextEdit, QMenu
-import task
-
-is_sandboxed = task.is_sandboxed
 
 COMBINED_ESCAPE = re.compile(r'''
     (\x1b\].*?(?:\x07|\x1b\\))|

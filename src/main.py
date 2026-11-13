@@ -2,9 +2,7 @@ import sys
 import os
 import platform
 import subprocess
-import time
 import shutil
-from pypresence import Presence
 from pathlib import Path
 from PyQt6.QtCore import Qt, QDir, QUrl
 from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFileSystemModel, QDesktopServices, QPixmap, QColor
@@ -23,6 +21,9 @@ import task # For debugging/compiling stuff
 import util # I don't remember adding this but welp.
 import terminal # sudo rm -rf /home/nyxiereal/metrolist-kmp.. Thank me later, Nyx
 import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -171537723572,1752662453 deletions (-)
+import discord 
+import icon_provider
+from issues import IssuesDialog
 
 
 # Make Antimatter find out it's parent directory
@@ -30,79 +31,11 @@ import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -17153772357
 BASE_DIR = util.BASE_DIR
 icon_path = str(BASE_DIR / "AppIcon.png")
 
-
-# Setup Discord Rich Presence
-RPC = None
-RPC_START_TIME = time.time()
-is_custom=False
-
-def update_rpc(filename=None, is_file_path=True):
-    if is_custom or not RPC:
-        return
-    try:
-        if filename:
-            display_name = Path(filename).name if is_file_path else filename
-            details = f"Editing {display_name}"
-        else:
-            details = "Editing a New Untitled File"
-            
-        RPC.update(
-            details=details,
-            start=RPC_START_TIME,
-            large_image="image",
-            large_text="Antimatter",
-        )
-    except Exception as e:
-        print(f"Couldn't update Discord RPC: {e}")
-
-def discord():
-    global RPC, is_custom
-    is_custom=False
-    try:
-        client_id = "1487828344480464957"
-        if not RPC:
-            for pipe_num in range(10):
-                try:
-                    RPC = Presence(client_id, pipe=pipe_num)
-                    RPC.connect()
-                    RPC.update(
-                        details="Doing absolutely nothing",
-                        start=RPC_START_TIME,
-                        large_image="image",
-                        large_text="Antimatter",
-                    )
-                    break
-                except Exception:
-                    continue
-    except Exception as e:
-        print(f"Discord RPC Error: {e}")
-
-# Custom Discord RPC status
-def custom():
-    global is_custom
-    is_custom=True
-    message, ok = QInputDialog.getText(None, "Custom Discord RPC Status", "Enter the message that you wish to have on your RPC Card")
-    if not ok or not message:
-        return
-    try:
-        RPC.update(
-            details=message,
-            start=RPC_START_TIME,
-            large_image="image",
-            large_text="Antimatter",
-        )
-        QMessageBox.information(None, "Complete !", "Done! Go check out your new status :)")
-    except Exception as e:
-        print(e)        
-        QMessageBox.warning(None, "Failed to set RPC status", "Make sure that your Discord client is running and that you are not offline. If your status is less than two letters long then it will not work, just so you know.")
-
 # The main app window and it's core functions
 
 class AntimatterApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        global is_sandboxed
-        is_sandboxed = task.is_sandboxed()
         self.setObjectName("Comical")
         self.setWindowTitle("Comical Antimatter")
         self.resize(1050, 650)
@@ -239,6 +172,7 @@ class AntimatterApp(QMainWindow):
 
         # File System Viewer
         self.file_model = QFileSystemModel()
+        self.file_model.setIconProvider(icon_provider.KDEFileIconProvider())
         root_path = str(Path.home())
         self.file_model.setRootPath(root_path)
 
@@ -554,13 +488,13 @@ class AntimatterApp(QMainWindow):
 
         view_menu = menubar.addMenu("View")
         view_menu.addAction(self.sidebar_dock.toggleViewAction())
-        if not is_sandboxed:
+        if not task.is_sandboxed():
             view_menu.addAction("Toggle Terminal/Code view\tCtrl + T", self.toggle_terminal)
         else:
             pass
 
         task_menu = menubar.addMenu("Task")
-        if not is_sandboxed:
+        if not task.is_sandboxed():
             task_menu.addAction("Run\t F5", self.Drun)
             task_menu.addAction("Build project\tCtrl + F5", task.compile)
         else:
@@ -568,33 +502,27 @@ class AntimatterApp(QMainWindow):
         task_menu.addAction("Find issues\tCtrl + I", self.issues)
 
         tools_menu = menubar.addMenu("Tools")
-        if not is_sandboxed:
+        if not task.is_sandboxed():
             tools_menu.addAction("Set up .venv environment", util.project)
             tools_menu.addAction("Check for updates", util.update)
             tools_menu.addSeparator()
         else:
             pass
-        tools_menu.addAction("Refresh Discord RPC", discord)
-        tools_menu.addAction("Set custom Discord RPC Status", custom)
+        tools_menu.addAction("Refresh Discord RPC", discord.init_discord)
+        tools_menu.addAction("Set custom Discord RPC Status", discord.custom)
         tools_menu.addSeparator()
         tools_menu.addAction("Open official Antimatter Documentation\tF1", util.docs)
         tools_menu.addAction("About Antimatter", util.about)
 
-        if not is_sandboxed:
+        if not task.is_sandboxed():
             git_menu = menubar.addMenu("Git")
-            git_menu.addAction("Add remote repository", git.set_repo)
-            git_menu.addAction("Clone", git.clone)
-            git_menu.addSeparator()
-            git_menu.addAction("Add files (Git add)", git.add)
-            git_menu.addAction("Commit", git.commit)
-            git_menu.addAction("Sync (Pull)", git.sync)
-            git_menu.addAction("Push", git.push)
+            git_menu.addAction("Open Git Dashboard\tCtrl + G", lambda: git.open_git_manager(self))
         else:
             pass
         
 
     def _setup_shortcuts(self):
-        if not is_sandboxed:
+        if not task.is_sandboxed():
             binds = [
                 ("Ctrl+S", self.save_file),
                 ("Ctrl+Shift+S", self.save_file_as),
@@ -610,7 +538,8 @@ class AntimatterApp(QMainWindow):
                 ("Ctrl+R", lambda: self._ed(lambda ed: ed.open_find(True))),
                 ("Ctrl+Shift+P", lambda: self._ed(lambda ed: ed.toggle_preview())),
                 ("F1", util.docs),
-                ("Ctrl+T", self.toggle_terminal)
+                ("Ctrl+T", self.toggle_terminal),
+                ("Ctrl+G", lambda: git.open_git_manager(self)),
             ]
         else:
             binds = [
@@ -702,10 +631,10 @@ class AntimatterApp(QMainWindow):
         self.stack.setCurrentIndex(1)
         self.tabs.setCurrentIndex(index)
 
-        if file_path and not is_custom:
-            update_rpc(file_path, is_file_path=True)
-        elif not is_custom:
-            update_rpc(None)
+        if file_path and not discord.is_custom:
+            discord.update_rpc(file_path, is_file_path=True)
+        elif not discord.is_custom:
+            discord.update_rpc(None)
         else:
             pass
 
@@ -728,14 +657,14 @@ class AntimatterApp(QMainWindow):
     def _on_tab_changed(self, index):
         editor = self.get_current_editor()
         if not editor:
-            update_rpc(None)
+            discord.update_rpc(None)
             return
         path = self.tabs_data[editor]["path"]
 
-        if path and not is_custom:
-            update_rpc(path, is_file_path=True)
-        elif not is_custom:
-            update_rpc(None)
+        if path and not discord.is_custom:
+            discord.update_rpc(path, is_file_path=True)
+        elif not discord.is_custom:
+            discord.update_rpc(None)
         else:
             pass
 
@@ -751,7 +680,7 @@ class AntimatterApp(QMainWindow):
         self.tabs.removeTab(index)
         if self.tabs.count() == 0:
             self.stack.setCurrentIndex(0)
-            update_rpc(None)
+            discord.update_rpc(None)
 
     def close_current_tab(self):
         if self.tabs.count() > 0:
@@ -806,7 +735,7 @@ class AntimatterApp(QMainWindow):
                 editor.start_lsp(path2)
             if hasattr(editor, "set_file_path"):
                 editor.set_file_path(path2)
-            update_rpc(filename)
+            discord.update_rpc(filename)
             return True
         except Exception as e:
             QMessageBox.critical(self, "Save Error", f"Could not save file:\n{e}")
@@ -824,7 +753,7 @@ class AntimatterApp(QMainWindow):
             with open(path, "w", encoding="utf-8") as f:
                 f.write(content)
             self.mark_tab_saved(editor)
-            update_rpc(Path(path).name)
+            discord.update_rpc(Path(path).name)
         except Exception as e:
             QMessageBox.critical(self, "Save Error", f"Could not save file:\n{e}")
             return False
@@ -858,39 +787,16 @@ class AntimatterApp(QMainWindow):
                 self.terminal_widget.write((cmd).encode("utf-8"))
             self.terminal_widget.set_focus()
 
-    def issues(self):
-        self.iss_win = QMainWindow(self)
-        self.iss_win.resize(700, 400)
-        self.iss_win.setWindowTitle("Issues - Comical Antimatter")
-
-        txt = QPlainTextEdit(self.iss_win)
-        txt.setReadOnly(True)
-        txt.setStyleSheet("background-color: #19191a; color: #D8DEE9;")
-        self.iss_win.setCentralWidget(txt)
-
-        actual_path = self.get_current_path() or ""
-        
-        try:
-            Out = subprocess.run(f'pyflakes "{actual_path}"', capture_output=True, text=True, shell=True)
-        except Exception as e:
-            print(f'[E]: {e}')
-            QMessageBox.warning(None, "Pyflakes error", "Couldn't run pyflakes.")
-
-        output_str = Out.stdout + Out.stderr
-        if not output_str.strip():
-            txt.setPlainText("[✓]: No issues detected. Looks good !")
-        elif output_str.strip() == ": No such file or directory":
-            txt.setPlainText("[!]: Open/Save the file first before exploring issues.")
-        else:
-            txt.setPlainText(f"[!]: Issues with the current file:\n==============================\n{output_str}")
-
-        self.iss_win.show()
-
     def closeEvent(self, event):
         super().closeEvent(event)
 
     def show_files(self):
         self.sidebar_dock.toggleViewAction()
+    
+    def issues(self):
+        ed = self.get_current_editor()
+        dlg = IssuesDialog(ed, self)
+        dlg.exec()
 
 
 if __name__ == "__main__":
@@ -898,5 +804,5 @@ if __name__ == "__main__":
     app.setDesktopFileName("io.github.comicalsoftwares.antimatter")
     window = AntimatterApp()
     window.show()
-    discord()
+    discord.init_discord()
     sys.exit(app.exec())

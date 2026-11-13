@@ -61,6 +61,15 @@
     <color type="primary" scheme_preference="light">#9141ac</color>
     <color type="primary" scheme_preference="dark">#5a2276</color>
   </branding>
+  
+  <requires>
+    <display_length compare="ge">500</display_length>
+  </requires>
+
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
 
   <screenshots>
     <screenshot type="default">
