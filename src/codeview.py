@@ -726,11 +726,6 @@ class AntimatterEditor(QFrame):
         comp_act = menu.addAction("Show Completions")
         comp_act.triggered.connect(self.show_completions)
         
-        if not task.is_sandboxed():
-            menu.addSeparator()
-            git = menu.addAction("View Git Dashboard\tCtrl + G", lambda: Git.open_git_manager(self))
-        else:
-            pass
         menu.exec(self.text.mapToGlobal(pos))
 
     def get(self, start="0.0", end="end-1c"):
