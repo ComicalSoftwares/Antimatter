@@ -150,7 +150,7 @@ class AntimatterApp(QMainWindow):
         center_layout = QVBoxLayout(center_container)
         center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         center_layout.setSpacing(12)
-        start_label = QLabel(f"To get started, open a project/folder from the top bar")
+        start_label = QLabel("To get started, open a project/folder from the top bar")
         start_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         start_label.setStyleSheet("color: #8a79a3; font-family: 'Consolas', 'Cantarell'; font-size: 15px; font-weight: bold; background: transparent;")
         center_layout.addWidget(logo_label)
