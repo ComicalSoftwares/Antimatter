@@ -87,7 +87,14 @@ class IssuesDialog(QDialog):
         self.table.setRowCount(0)
         if not self.file_path or not os.path.exists(self.file_path):
             self.table.insertRow(0)
-            item = QTableWidgetItem("Save or open a Python file to run diagnostics.")
+            item = QTableWidgetItem("Open or save a file first before exploring issues.")
+            item.setForeground(QColor("#f9e2af"))
+            self.table.setItem(0, 2, item)
+            return
+            
+        if not self.file_path.lower().endswith('.py'):
+            self.table.insertRow(0)
+            item = QTableWidgetItem("This is not a Python file. Finding issues only works on Python scripts.")
             item.setForeground(QColor("#f9e2af"))
             self.table.setItem(0, 2, item)
             return
@@ -125,12 +132,12 @@ class IssuesDialog(QDialog):
             
             if row == 0 and not output.strip():
                 self.table.insertRow(0)
-                item = QTableWidgetItem("No issues detected. Looking pristine! 🎉")
+                item = QTableWidgetItem("No issues detected. Good Job !")
                 item.setForeground(QColor("#a6e3a1"))
                 self.table.setItem(0, 2, item)
         except Exception as e:
             self.table.insertRow(0)
-            item = QTableWidgetItem(f"Error running linter: {e}")
+            item = QTableWidgetItem(f"Sorry, we couldn't run the linter: {e}")
             item.setForeground(QColor("#f38ba8"))
             self.table.setItem(0, 2, item)
 

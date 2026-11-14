@@ -5,10 +5,10 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
     QTableWidget, QTableWidgetItem, QTextBrowser, QPushButton,
-    QLineEdit, QLabel, QMessageBox, QHeaderView, QSplitter
+    QLineEdit, QLabel, QMessageBox, QHeaderView, QSplitter, QFileDialog
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QColor
+from PyQt6.QtCore import Qt, QDir
+from PyQt6.QtGui import QColor
 
 BASE_DIR = Path(__file__).resolve().parent
 ICON_PATH = str(BASE_DIR / "AppIcon.png")
@@ -95,7 +95,10 @@ class GitManagerDialog(QDialog):
         right_layout = QVBoxLayout()
         right_layout.addWidget(QLabel("<b>File Diff Preview</b>"))
         self.diff_browser = QTextBrowser()
-        self.diff_browser.setStyleSheet("background-color: #141415; color: #cdd6f4; border: 1px solid #313244; font-family: Consolas; font-size: 11px; border-radius: 4px;")
+        self.diff_browser.setStyleSheet(
+            "background-color: #141415; color: #cdd6f4;"
+            "border: 1px solid #313244; font-family: Consolas;"
+            "font-size: 11px; border-radius: 4px;")
         right_layout.addWidget(self.diff_browser)
         
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -145,14 +148,14 @@ class GitManagerDialog(QDialog):
         form_layout.addSpacing(15)
         
         sync_box = QHBoxLayout()
-        pull_btn = QPushButton("Pull Changes (Git pull)")
+        pull_btn = QPushButton("Pull Changes")
         pull_btn.setStyleSheet("background-color: #313244; color: #a6e3a1; border: none; padding: 8px; border-radius: 4px;")
         pull_btn.clicked.connect(self.do_pull)
         
         self.branch_input = QLineEdit("main")
         self.branch_input.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: 1px solid #313244; padding: 6px; border-radius: 4px;")
         
-        push_btn = QPushButton("Push Changes (git push)")
+        push_btn = QPushButton("Push Changes")
         push_btn.setStyleSheet("background-color: #89b4fa; color: #1e1e1e; font-weight: bold; border: none; padding: 8px; border-radius: 4px;")
         push_btn.clicked.connect(self.do_push)
         
@@ -179,14 +182,18 @@ class GitManagerDialog(QDialog):
     def refresh_status(self):
         self.status_table.setRowCount(0)
         try:
-            res = subprocess.run("git status --porcelain", cwd=self.project_dir, shell=True, Text=True, check=True, capture_output=True)
+            res = subprocess.run("git status --porcelain", cwd=self.project_dir, shell=True, text=True, check=True, capture_output=True)
             lines = res.stdout.strip().splitlines()
             row = 0
             for line in lines:
-                if len(line) < 3:
+                if not line.strip():
                     continue
-                status_code = line[:2]
-                filepath = line[3:]
+                parts = line.strip().split(maxsplit=1)
+                if len(parts) < 2:
+                    continue
+                    
+                status_code = parts[0]
+                filepath = parts[1].strip('"')
                 
                 self.status_table.insertRow(row)
                 s_item = QTableWidgetItem(status_code)
@@ -207,8 +214,8 @@ class GitManagerDialog(QDialog):
         if not items: return
         filepath = self.status_table.item(items[0].row(), 1).text()
         try:
-            res = subprocess.run(f'git diff "{filepath}"', cwd=self.project_dir, shell=True, Text=True, capture_output=True)
-            diff_text = res.stdout.strip() or subprocess.run(f'git diff --cached "{filepath}"', cwd=self.project_dir, shell=True, Text=True, capture_output=True).stdout.strip()
+            res = subprocess.run(f'git diff "{filepath}"', cwd=self.project_dir, shell=True, text=True, capture_output=True)
+            diff_text = res.stdout.strip() or subprocess.run(f'git diff --cached "{filepath}"', cwd=self.project_dir, shell=True, text=True, capture_output=True).stdout.strip()
             if not diff_text: diff_text = "(No diff available)"
             
             formatted = []
@@ -227,7 +234,7 @@ class GitManagerDialog(QDialog):
         if not items: return
         filepath = self.status_table.item(items[0].row(), 1).text()
         try:
-            subprocess.run(f'git add "{filepath}"', cwd=self.project_dir, shell=True, check=True, Text=True, capture_output=True)
+            subprocess.run(f'git add "{filepath}"', cwd=self.project_dir, shell=True, check=True, text=True, capture_output=True)
             self.refresh_status()
         except Exception as e:
             QMessageBox.critical(self, "Git Error", str(e))
@@ -248,7 +255,7 @@ class GitManagerDialog(QDialog):
 
     def refresh_log(self):
         try:
-            res = subprocess.run('git log -n 30 --oneline', cwd=self.project_dir, shell=True, Text=True, capture_output=True)
+            res = subprocess.run('git log -n 30 --oneline', cwd=self.project_dir, shell=True, text=True, capture_output=True)
             self.log_browser.setPlainText(res.stdout or "No commits yet.")
         except Exception:
             self.log_browser.setPlainText("Not a git repository.")
@@ -280,9 +287,20 @@ class GitManagerDialog(QDialog):
             QMessageBox.critical(self, "Error", str(e))
 
 def open_git_manager(parent_window=None):
-    current_path = parent_window.get_current_path() if parent_window and hasattr(parent_window, "get_current_path") else None
+    current_path = None
+    if parent_window:
+        if hasattr(parent_window, "get_project_root") and parent_window.get_project_root():
+            current_path = parent_window.get_project_root()
+        elif hasattr(parent_window, "get_current_path"):
+            current_path = parent_window.get_current_path()
+            
     if current_path and os.path.isfile(current_path):
         current_path = os.path.dirname(current_path)
         
+    if not current_path or not os.path.exists(current_path):
+        current_path = QFileDialog.getExistingDirectory(parent_window, "Select Project Folder", QDir.homePath())
+        if not current_path:
+            return
+
     dlg = GitManagerDialog(current_path, parent_window)
     dlg.exec()

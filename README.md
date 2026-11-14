@@ -81,6 +81,7 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] Git commit
 - [X] Git Push
 - [X] Git Sync
+- [X] Git Dahsboard **(NEW !)**
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:

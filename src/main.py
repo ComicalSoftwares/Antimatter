@@ -8,8 +8,7 @@ from PyQt6.QtCore import Qt, QDir, QUrl
 from PyQt6.QtGui import QIcon, QAction, QKeySequence, QFileSystemModel, QDesktopServices, QPixmap, QColor
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout,
-    QTabWidget, QPlainTextEdit,
-    QFileDialog, QMessageBox, QPushButton, QTreeView,
+    QTabWidget, QFileDialog, QMessageBox, QPushButton, QTreeView,
     QDockWidget, QMenu, QInputDialog, QStackedWidget,
     QGraphicsColorizeEffect, QLabel)
 
@@ -21,8 +20,7 @@ import task # For debugging/compiling stuff
 import util # I don't remember adding this but welp.
 import terminal # sudo rm -rf /home/nyxiereal/metrolist-kmp.. Thank me later, Nyx
 import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -171537723572,1752662453 deletions (-)
-import discord 
-import icon_provider
+import discord
 from issues import IssuesDialog
 
 
@@ -152,14 +150,18 @@ class AntimatterApp(QMainWindow):
         center_layout = QVBoxLayout(center_container)
         center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         center_layout.setSpacing(12)
+        start_label = QLabel(f"To get started, open a project/folder from the top bar")
+        start_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        start_label.setStyleSheet("color: #8a79a3; font-family: 'Consolas', 'Cantarell'; font-size: 15px; font-weight: bold; background: transparent;")
         center_layout.addWidget(logo_label)
         center_layout.addWidget(title_label)
+        center_layout.addWidget(start_label)
 
         welcome_layout.addStretch()
         welcome_layout.addWidget(center_container)
         welcome_layout.addStretch()
 
-        footer_label = QLabel(f"Version {util.CURRENT_VERSION} - Alpha")
+        footer_label = QLabel(f"Version {util.CURRENT_VERSION} - Beta")
         footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer_label.setStyleSheet("color: #8a79a3; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
         footer_label2 = QLabel("This project is open-source and licensed under the MIT license.")
@@ -172,15 +174,15 @@ class AntimatterApp(QMainWindow):
 
         # File System Viewer
         self.file_model = QFileSystemModel()
-        self.file_model.setIconProvider(icon_provider.KDEFileIconProvider())
-        root_path = str(Path.home())
-        self.file_model.setRootPath(root_path)
-
         self.tree = QTreeView()
-        self.tree.setModel(self.file_model)
-        self.tree.setRootIndex(self.file_model.index(root_path))
+        self.tree.setModel(None)  # So we can force user to chose a folder, which will allow the git module 
+                                  # be able to get the folder's abs path so it can fianlly manage it.
         self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._show_tree_context_menu)
+        self.tree.header().hide()
+        self.tree.doubleClicked.connect(self._on_tree_double_clicked)
+        
+        self.project_root = None
 
         for col in range(1, 4):
             self.tree.setColumnHidden(col, True)
@@ -191,14 +193,10 @@ class AntimatterApp(QMainWindow):
         # File Dock Sidebar
         self.sidebar_dock = QDockWidget("File Manager", self)
         self.sidebar_dock.setWidget(self.tree)
-        self.sidebar_dock.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetClosable | 
-            QDockWidget.DockWidgetFeature.DockWidgetMovable
-        )
-        self.sidebar_dock.setAllowedAreas(
-            Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
-        )
+        self.sidebar_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetClosable | QDockWidget.DockWidgetFeature.DockWidgetMovable)
+        self.sidebar_dock.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.sidebar_dock)
+        self.sidebar_dock.hide()
 
         # Tab bar
         self.tabs = QTabWidget()
@@ -248,7 +246,7 @@ class AntimatterApp(QMainWindow):
         """)
         self.stack.addWidget(self.tabs)
 
-        # Live Terminal Widget
+        # Live Terminal Widget (That's broken)
         self.terminal_container = QWidget()
         term_layout = QVBoxLayout(self.terminal_container)
         term_layout.setContentsMargins(5, 5, 5, 5)
@@ -270,10 +268,27 @@ class AntimatterApp(QMainWindow):
             for arg in sys.argv[1:]:
                 resolved_path = os.path.abspath(arg)
                 if os.path.isdir(resolved_path):
-                    self.file_model.setRootPath(resolved_path)
-                    self.tree.setRootIndex(self.file_model.index(resolved_path))
+                    self.load_project_folder(resolved_path)
                 elif os.path.isfile(resolved_path):
+                    parent_dir = str(Path(resolved_path).parent)
+                    self.load_project_folder(parent_dir)
                     self.open_file_by_path(resolved_path)
+    def load_project_folder(self, folder):
+        self.project_root = folder
+        self.file_model.setRootPath(folder)
+        self.tree.setModel(self.file_model)
+        self.tree.setRootIndex(self.file_model.index(folder))
+        for col in range(1, 4):
+            self.tree.setColumnHidden(col, True)
+
+    def open_project_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Open Project Folder", QDir.homePath())
+        if folder:
+            self.load_project_folder(folder)
+            self.sidebar_dock.show()
+
+    def get_project_root(self):
+        return self.project_root
 
     def _show_tree_context_menu(self, position):
         index = self.tree.indexAt(position)
@@ -453,12 +468,6 @@ class AntimatterApp(QMainWindow):
 
         filename = Path(path).name
         self.create_new_tab(title=filename, content=content, file_path=path)
-
-    def open_project_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Open Project Folder", QDir.homePath())
-        if folder:
-            self.file_model.setRootPath(folder)
-            self.tree.setRootIndex(self.file_model.index(folder))
 
     
     # Top menubar (For file/View/Task and that other stuff)
