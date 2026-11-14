@@ -106,7 +106,7 @@ footer{border-top:1px solid var(--line);padding:32px 0;color:var(--muted);font:4
       <a class="btn gh" href="https://github.com/ComicalSoftwares/Antimatter">View it on GitHub</a>
     </div>
     <div class="sub" id="dl-sub">Windows installer · Linux: build from source</div>
-    <div class="win heroshot"><img src="https://github.com/user-attachments/assets/459266d2-c7c0-4cbb-85a4-46940d4834b2" alt="Antimatter editing a Python file" data-zoom></div>
+    <div class="win heroshot"><img src="https://github.com/user-attachments/assets/88b86d99-f9f1-47b5-a7cb-170a8f0c679e" alt="Antimatter editing a Python file" data-zoom></div>
   </div>
 
   <section><div class="wrap">
@@ -157,7 +157,7 @@ const CFG = {
   siteOwner: "Samiyyan",
   projectOwner: "Comical",
   // Screenshots: drop images in /screenshots and list them here
-  shots: ["https://github.com/user-attachments/assets/459266d2-c7c0-4cbb-85a4-46940d4834b2","https://github.com/user-attachments/assets/821a88e0-62b6-469e-b66f-f5d7005e8798"],
+  shots: ["https://github.com/user-attachments/assets/88b86d99-f9f1-47b5-a7cb-170a8f0c679e","https://github.com/user-attachments/assets/48983751-b1f8-4611-9004-c669f46d349b"],
   // Wiki pages shown if _Sidebar.md can't be read. First = default page.
   fallbackPages: [["Home","Home"],["Quick-Start-Guide","Quick Start Guide"],["Contributing-Guidelines","Contributing Guidelines"]]
 };
@@ -168,7 +168,7 @@ const slug = t => t.toLowerCase().trim().replace(/<[^>]+>/g,"").replace(/[^\w\- 
 
 /* ---------- footer + screenshots ---------- */
 $("#disclaimer").textContent = `Website is owned by ${CFG.siteOwner} and project is owned by ${CFG.projectOwner}`;
-const caps=["Syntax highlighting, tabs and the file manager","Clean, distraction-free interface"];
+const caps=["Antimatter editing a Python Script","Antimatter editing a Markdown document (Yes, it supports that too !)"];
 $("#shots").innerHTML = CFG.shots.map((s,i)=>`<div class="win"><img src="${s}" alt="Antimatter screenshot ${i+1}" data-zoom onerror="this.outerHTML='<div class=ph>Screenshot unavailable</div>'"><div class="cap">${caps[i]||""}</div></div>`).join("");
 document.body.insertAdjacentHTML("beforeend",'<div id="lb"><img alt=""></div>');
 document.addEventListener("click",e=>{const z=e.target.closest("[data-zoom]"),lb=$("#lb");
