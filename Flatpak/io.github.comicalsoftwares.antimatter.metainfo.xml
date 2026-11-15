@@ -87,6 +87,17 @@
   </screenshots>
 
   <releases>
+    <release version="1.8" date="2026-11-12">
+      <description translate="no">
+        <p>Improved code editing experience with UI upgrades.</p>
+        <ul>
+          <li>Improved code editing experience.</li>
+          <li>Updated store listing details.</li>
+          <li>Welcome screen now hides file manager by default on launch.</li>
+          <li>Finding issues now works better and is more reliable.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.7.1" date="2026-11-12">
       <description translate="no">
         <p>Small improvements.</p>
