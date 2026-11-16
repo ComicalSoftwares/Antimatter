@@ -1,0 +1,7 @@
+src/__pycache__/
+.venv/
+.idea/
+.vscode/
+Flatpak/repo
+Flatpak/build
+
