@@ -53,7 +53,6 @@ def update_rpc(filename=None, is_file_path=True):
 
 def custom():
     global RPC, is_custom, RPC_START_TIME
-    is_custom = True
     message, ok = QInputDialog.getText(None, "Custom Discord RPC Status", "Enter the message that you wish to have on your RPC Card")
     if not ok or not message:
         return
@@ -65,6 +64,17 @@ def custom():
             large_text="Antimatter",
         )
         QMessageBox.information(None, "Complete !", "Done! Go check out your new status :)")
+        is_custom = True
     except Exception as e:
         print(e)        
-        QMessageBox.warning(None, "Failed to set RPC status", "Make sure that your Discord client is running and that you are not offline. If your status is less than two letters long then it will not work, just so you know.")
+        QMessageBox.warning(None, "Failed to set RPC status", "Make sure that your Discord client is running and that you are not offline. Also, If your status is less than two letters long then it will not work.")
+        
+def disconnect():
+    global RPC, is_custom
+    try:
+        if RPC:
+            RPC.close()
+    except Exception:
+        pass
+    RPC = None
+    is_custom = False

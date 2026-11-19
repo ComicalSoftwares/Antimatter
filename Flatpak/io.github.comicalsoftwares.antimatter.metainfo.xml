@@ -87,7 +87,22 @@
   </screenshots>
 
   <releases>
-    <release version="1.8" date="2026-11-12">
+    <release version="1.9" date="2026-11-19">
+      <description translate="no">
+        <p>QOL improvements and bugfixes</p>
+        <ul>
+          <li>Swapped PyFlakes Linter to Ruff for better debugging experience.</li>
+          <li>"About Antimatter" now has the F2 keybind for quick access.</li>
+          <li>Upgraded LSP for smarter and more stable completions.</li>
+          <li>Opening a project's folder updates the window's title name.</li>
+          <li>Fixed LSP and code editor leaking issues.</li>
+          <li>Code editor now remembers identation and highlights current line for easier script editing.</li>
+          <li>Fixed issue where resetting discord RPC doesn't work.</li>
+          <li>Added Preferences.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.8" date="2026-11-15">
       <description translate="no">
         <p>Improved code editing experience with UI upgrades.</p>
         <ul>
@@ -117,7 +132,7 @@
           <li>Code viewer now supports Markdown syntax highlighting.</li>
           <li>Added "Open folder" function.</li>
           <li>Discord RPC Improvements + Addition of custom RPC status.</li>
-          <li>Fixed a lotleaks and bugs.</li>
+          <li>Fixed a lot of leaks and bugs.</li>
           <li>Improved the code editing experience.</li>
         </ul>
       </description>

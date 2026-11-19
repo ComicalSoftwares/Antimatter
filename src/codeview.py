@@ -1,22 +1,17 @@
 import os
 import re
-import hashlib
 import asyncio
 import threading
-from pathlib import Path
-
-from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QObject, QTimer, QStandardPaths
-from PyQt6.QtGui import QColor, QFont, QPainter, QSyntaxHighlighter, QTextCharFormat, QTextCursor, QTextDocument
+from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QObject, QTimer
+from PyQt6.QtGui import QColor, QFont, QPainter, QSyntaxHighlighter, QTextCharFormat, QTextCursor, QTextDocument, QTextFormat
 from PyQt6.QtWidgets import (
     QWidget, QPlainTextEdit, QTextEdit, QListWidget, QMenu, QHBoxLayout, 
     QFrame, QVBoxLayout, QLabel, QLineEdit, QToolButton
 )
 from lsp import LspClient
-import git as Git
 import theme
 import builtins
 import keyword
-import task
 
 KEYWORDS = frozenset(keyword.kwlist)
 CONSTANTS = frozenset({"True", "False", "None"})
@@ -140,47 +135,170 @@ class AntimatterTextEdit(QPlainTextEdit):
         super().__init__(parent)
         self.font_family = "Consolas"
         self.font_size = 12
+        self.tab_width = 4
+        self.use_spaces = True
+        self.word_wrap = False
+        self.show_line_numbers = True
+        self.highlight_line = True
+        self.auto_indent = True
+        self.is_markdown = False
         self.highlighter = None
-        
-        self.setFont(QFont(self.font_family, self.font_size))
-        self.setStyleSheet("""
-            QPlainTextEdit {
-                background-color: #19191a;
-                color: #D8DEE9;
-                border: none;
-                selection-background-color: #2e3c64;
-            }
-        """)
+        self.python_mode = False
+        self.comment_prefix = "#"
+
+        self.setStyleSheet(theme.code)
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        self.setCursorWidth(2)
 
         self.line_number_area = LineNumberArea(self)
+        self._apply_font()
         self.blockCountChanged.connect(self.update_line_number_area_width)
         self.updateRequest.connect(self.update_line_number_area)
+        self.cursorPositionChanged.connect(self._refresh_selections)
+        self.cursorPositionChanged.connect(self.line_number_area.update)
         self.update_line_number_area_width(0)
+        self._refresh_selections()
         self.verticalScrollBar().setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, False)
         self.horizontalScrollBar().setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, False)
 
+    @property
+    def INDENT(self):
+        return " " * self.tab_width if self.use_spaces else "\t"
+
+    def apply_wrap(self):
+        wrap = self.is_markdown or self.word_wrap
+        self.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth if wrap
+                         else QPlainTextEdit.LineWrapMode.NoWrap)
+                         
+    def apply_settings(self, s):
+        self.font_family = s["font_family"]
+        self.font_size = s["font_size"]
+        self.tab_width = s["tab_width"]
+        self.use_spaces = s["use_spaces"]
+        self.word_wrap = s["word_wrap"]
+        self.show_line_numbers = s["show_line_numbers"]
+        self.highlight_line = s["highlight_line"]
+        self.auto_indent = s["auto_indent"]
+        self._apply_font()
+        self.apply_wrap()
+        self.line_number_area.setVisible(self.show_line_numbers)
+        self.update_line_number_area_width(0)
+        self._refresh_selections()
+
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Tab:
+        key = event.key()
+        ctrl = bool(event.modifiers() & Qt.KeyboardModifier.ControlModifier)
+
+        if key == Qt.Key.Key_Tab and not ctrl:
             cursor = self.textCursor()
-            col = cursor.columnNumber()
-            spaces_to_insert = 4 - (col % 4)
-            cursor.insertText(" " * spaces_to_insert)
+            if cursor.hasSelection():
+                self._shift_lines(indent=True)
+            elif self.use_spaces:
+                cursor.insertText(" " * (self.tab_width - cursor.columnNumber() % self.tab_width))
+            else:
+                cursor.insertText("\t")
             return
 
-        if event.key() == Qt.Key.Key_Backspace:
+        if key == Qt.Key.Key_Backtab:
+            self._shift_lines(indent=False)
+            return
+
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and not ctrl:
+            self._smart_newline()
+            return
+
+        if key == Qt.Key.Key_Slash and ctrl:
+            self._toggle_comment()
+            return
+
+        if key == Qt.Key.Key_Backspace:
             cursor = self.textCursor()
             if not cursor.hasSelection():
-                block_text = cursor.block().text()
                 col = cursor.columnNumber()
-                prefix = block_text[:col]
+                prefix = cursor.block().text()[:col]
                 if prefix and prefix.isspace():
-                    spaces_to_delete = col % 4 or 4
-                    cursor.setPosition(cursor.position() - spaces_to_delete, QTextCursor.MoveMode.KeepAnchor)
+                    cursor.setPosition(cursor.position() - (col % self.tab_width or self.tab_width), QTextCursor.MoveMode.KeepAnchor)
                     cursor.removeSelectedText()
                     return
 
         super().keyPressEvent(event)
+
+
+    def _smart_newline(self):
+        cursor = self.textCursor()
+        before = cursor.block().text()[:cursor.positionInBlock()]
+        indent = ""
+        if self.auto_indent:
+            indent = before[:len(before) - len(before.lstrip(" \t"))]
+            if self.python_mode and before.rstrip().endswith(":") and not before.lstrip().startswith("#"):
+                indent += self.INDENT
+        cursor.insertText("\n" + indent)
+        self.setTextCursor(cursor)
+        self.ensureCursorVisible()
+    
+    def _selected_blocks(self):
+        cursor = self.textCursor()
+        doc = self.document()
+        first = doc.findBlock(cursor.selectionStart())
+        last = doc.findBlock(cursor.selectionEnd())
+        if (cursor.hasSelection() and last.blockNumber() > first.blockNumber()
+                and cursor.selectionEnd() == last.position()):
+            last = last.previous()
+        blocks, block = [], first
+        while block.isValid():
+            blocks.append(block)
+            if block.blockNumber() >= last.blockNumber():
+                break
+            block = block.next()
+        return blocks
+    
+    def _shift_lines(self, indent):
+        blocks = self._selected_blocks()
+        edit = QTextCursor(self.document())
+        edit.beginEditBlock()
+        for block in blocks:
+            text = block.text()
+            c = QTextCursor(block)
+            if indent:
+                if text.strip() or len(blocks) == 1:
+                    c.insertText(self.INDENT)
+            else:
+                n = 1 if text.startswith("\t") else min(self.tab_width, len(text) - len(text.lstrip(" ")))
+                if n:
+                    c.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, n)
+                    c.removeSelectedText()
+        edit.endEditBlock()
+    
+    def _toggle_comment(self):
+        prefix = self.comment_prefix
+        blocks = [b for b in self._selected_blocks() if b.text().strip()]
+        if not blocks:
+            return
+        all_commented = all(b.text().lstrip().startswith(prefix) for b in blocks)
+        min_indent = min(len(b.text()) - len(b.text().lstrip()) for b in blocks)
+        edit = QTextCursor(self.document())
+        edit.beginEditBlock()
+        for block in blocks:
+            text = block.text()
+            c = QTextCursor(block)
+            if all_commented:
+                i = len(text) - len(text.lstrip())
+                n = len(prefix) + (1 if text[i + len(prefix):i + len(prefix) + 1] == " " else 0)
+                c.setPosition(block.position() + i)
+                c.setPosition(block.position() + i + n, QTextCursor.MoveMode.KeepAnchor)
+                c.removeSelectedText()
+            else:
+                c.setPosition(block.position() + min_indent)
+                c.insertText(prefix + " ")
+        edit.endEditBlock()
+    
+    def _apply_font(self):
+        f = theme.mono_font(self.font_size)
+        f.setFamilies([self.font_family] + theme.MONO_FAMILIES)
+        self.setFont(f)
+        self.setTabStopDistance(self.fontMetrics().horizontalAdvance(" ") * self.tab_width)
+        self.update_line_number_area_width(0)
+        self.line_number_area.update()
 
     def line_number_area_width(self):
         digits = 1
@@ -192,7 +310,8 @@ class AntimatterTextEdit(QPlainTextEdit):
         return max(45, space)
 
     def update_line_number_area_width(self, _):
-        self.setViewportMargins(self.line_number_area_width(), 0, 0, 0)
+        width = self.line_number_area_width() if self.show_line_numbers else 0
+        self.setViewportMargins(width, 0, 0, 0)
 
     def update_line_number_area(self, rect, dy):
         if dy:
@@ -211,6 +330,7 @@ class AntimatterTextEdit(QPlainTextEdit):
         painter = QPainter(self.line_number_area)
         painter.fillRect(event.rect(), QColor("#19191a"))
 
+        current = self.textCursor().blockNumber()
         block = self.firstVisibleBlock()
         blockNumber = block.blockNumber()
         top = round(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
@@ -219,7 +339,7 @@ class AntimatterTextEdit(QPlainTextEdit):
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(blockNumber + 1)
-                painter.setPen(QColor("#45475a"))
+                painter.setPen(QColor("#cdd6f4") if blockNumber == current else QColor("#45475a"))
                 painter.setFont(self.font())
                 painter.drawText(0, top, self.line_number_area.width(), self.fontMetrics().height(),
                                  Qt.AlignmentFlag.AlignCenter, number)
@@ -235,8 +355,7 @@ class AntimatterTextEdit(QPlainTextEdit):
                 self.font_size += 1
             elif delta < 0:
                 self.font_size = max(6, self.font_size - 1)
-            self.setFont(QFont(self.font_family, self.font_size))
-            self.line_number_area.update()
+            self._apply_font()
             event.accept()
         else:
             super().wheelEvent(event)
@@ -245,8 +364,55 @@ class AntimatterTextEdit(QPlainTextEdit):
         self._find_ranges = ranges[:500]
         self._refresh_selections()
 
+    _OPEN = {"(": ")", "[": "]", "{": "}"}
+    _CLOSE = {v: k for k, v in _OPEN.items()}
+    
+    def _bracket_pair(self):
+        doc = self.document()
+        pos = self.textCursor().position()
+        for p in (pos, pos - 1):
+            if p < 0:
+                continue
+            ch = doc.characterAt(p)
+            if ch in self._OPEN:
+                other, step = self._OPEN[ch], 1
+            elif ch in self._CLOSE:
+                other, step = self._CLOSE[ch], -1
+            else:
+                continue
+            depth = 0
+            stop = min(doc.characterCount(), p + 20000) if step > 0 else max(-1, p - 20000)
+            for i in range(p, stop, step):
+                c = doc.characterAt(i)
+                if c == ch:
+                    depth += 1
+                elif c == other:
+                    depth -= 1
+                    if depth == 0:
+                        return [p, i]
+        return []
+    
     def _refresh_selections(self):
         sels = []
+    
+        if self.highlight_line:
+            line = QTextEdit.ExtraSelection()
+            line.format.setBackground(QColor(theme.CURRENT_LINE))
+            line.format.setProperty(QTextFormat.Property.FullWidthSelection, True)
+            c = self.textCursor()
+            c.clearSelection()
+            line.cursor = c
+            sels.append(line)
+    
+        for pos in self._bracket_pair():
+            s = QTextEdit.ExtraSelection()
+            c = QTextCursor(self.document())
+            c.setPosition(pos)
+            c.setPosition(pos + 1, QTextCursor.MoveMode.KeepAnchor)
+            s.cursor = c
+            s.format.setBackground(QColor(theme.BRACKET))
+            sels.append(s)
+    
         for start, end in getattr(self, "_find_ranges", []):
             s = QTextEdit.ExtraSelection()
             c = QTextCursor(self.document())
@@ -255,6 +421,7 @@ class AntimatterTextEdit(QPlainTextEdit):
             s.cursor = c
             s.format.setBackground(QColor("#313244"))
             sels.append(s)
+    
         self.setExtraSelections(sels)
 
 
@@ -262,18 +429,7 @@ class FindBar(QFrame):
     def __init__(self, editor_container):
         super().__init__()
         self.editor = editor_container
-        self.setStyleSheet('''
-            FindBar { 
-                background: #19191a; 
-                border-bottom: 3px solid #313244; 
-            }
-            QToolTip {
-                background-color: #181825;
-                color: #cdd6f4;
-                border: 1px solid #313244;
-                padding: 5px;
-                font-size: 15px;
-            }''')
+        self.setStyleSheet(theme.findbar)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(8, 6, 8, 6)
         outer.setSpacing(4)
@@ -363,17 +519,10 @@ class AntimatterEditor(QFrame):
         self.highlighter = None
         self._current_file_path = None
 
-        # Setup sandbox-friendly recovery cache (~/.cache/antimatter/recovery/)
-        base_cache = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
-        self.cache_dir = Path(base_cache) / "antimatter" / "recovery"
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.cache_file = None
-
-        # 5-second debounce timer for typing inactivity auto-save
-        self.auto_save_timer = QTimer(self)
-        self.auto_save_timer.setSingleShot(True)
-        self.auto_save_timer.setInterval(5000)
-        self.auto_save_timer.timeout.connect(self.write_to_cache)
+        self.lsp_timer = QTimer(self)
+        self.lsp_timer.setSingleShot(True)
+        self.lsp_timer.setInterval(250)
+        self.lsp_timer.timeout.connect(self._send_lsp_change)
 
         self.lsp = LspClient()
         self.loop = asyncio.new_event_loop()
@@ -388,19 +537,28 @@ class AntimatterEditor(QFrame):
         self.text.document().contentsChanged.connect(self._on_document_changed)
         
         self.text.installEventFilter(self)
+        self.text.viewport().installEventFilter(self)
+        self.text.verticalScrollBar().valueChanged.connect(self._close_popup)
+        self.text.horizontalScrollBar().valueChanged.connect(self._close_popup)
         self.comp_popup = None
+        self.lsp_enabled = True
         self._current_completions = []
+
+    def _send_lsp_change(self):
+        if self.lsp.running:
+            asyncio.run_coroutine_threadsafe(
+                self.lsp.did_change(self.text.toPlainText()), self.loop)
+                
+    def apply_settings(self, s):
+        self.text.apply_settings(s)
+        self.lsp_enabled = s["lsp_enabled"]
+
+    def stop_lsp(self):
+        asyncio.run_coroutine_threadsafe(self.lsp.stop(), self.loop)
 
     def set_file_path(self, file_path):
         self._current_file_path = file_path
         ext = os.path.splitext(file_path)[1].lower() if file_path else ""
-
-        if file_path:
-            file_hash = hashlib.md5(file_path.encode('utf-8')).hexdigest()[:8]
-            clean_name = Path(file_path).name
-            self.cache_file = self.cache_dir / f"{clean_name}_{file_hash}.recovery"
-        else:
-            self.cache_file = self.cache_dir / "unsaved_scratch.py.recovery"
 
         if self.highlighter:
             self.highlighter.setDocument(None)
@@ -418,53 +576,10 @@ class AntimatterEditor(QFrame):
         else:
             self.text.highlighter = None
             self.text.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-
-    def write_to_cache(self):
-        if not self.cache_file:
-            return
-        content = self.text.toPlainText()
-        try:
-            self.cache_file.write_text(content, encoding="utf-8")
-        except Exception as e:
-            print(f"[Antimatter] Recovery write error: {e}")
-
-    def clear_cache(self):
-        if self.cache_file and self.cache_file.exists():
-            try:
-                self.cache_file.unlink()
-            except Exception:
-                pass
-
-    def reload_from_cache(self):
-        if not self.cache_file or not self.cache_file.exists():
-            return
-        try:
-            cached_text = self.cache_file.read_text(encoding="utf-8")
-            
-            cursor = self.text.textCursor()
-            pos = cursor.position()
-            anchor = cursor.anchor()
-            
-            v_scroll = self.text.verticalScrollBar().value()
-            h_scroll = self.text.horizontalScrollBar().value()
-            
-            self.text.setPlainText(cached_text)
-            
-            max_len = len(cached_text)
-            cursor.setPosition(min(anchor, max_len))
-            if pos != anchor:
-                cursor.setPosition(min(pos, max_len), QTextCursor.MoveMode.KeepAnchor)
-            else:
-                cursor.setPosition(min(pos, max_len))
-            self.text.setTextCursor(cursor)
-            
-            self.text.verticalScrollBar().setValue(v_scroll)
-            self.text.horizontalScrollBar().setValue(h_scroll)
-            
-            if self.highlighter:
-                self.highlighter.rehighlight()
-        except Exception as e:
-            print(f"[Antimatter] Cache reload error: {e}")
+        self.text.python_mode = (ext == ".py")
+        self.text.comment_prefix = "//" if ext in (".c", ".h", ".cpp", ".hpp", ".js", ".ts", ".java", ".rs", ".go") else "#"
+        self.text.is_markdown = ext in (".md", ".markdown")
+        self.text.apply_wrap()
 
     def open_find(self, replace=False):
         self.findbar.open_bar(replace)
@@ -522,7 +637,6 @@ class AntimatterEditor(QFrame):
         sel, text = c.selectedText(), self.findbar.find.text()
         if c.hasSelection() and (sel == text if self.findbar.case.isChecked() else sel.lower() == text.lower()):
             c.insertText(self.findbar.repl.text())
-            self.write_to_cache()
         self.step_find(False)
 
     def replace_all(self):
@@ -563,31 +677,44 @@ class AntimatterEditor(QFrame):
 
         self.findbar.count.setText(f"{n} replaced")
 
-        self.write_to_cache()
         self.findbar.close_bar()
 
     def eventFilter(self, obj, event):
-        if obj == self.text and event.type() == event.Type.KeyPress:
-            if event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_Space:
-                self.show_completions()
-                return True
+        popup_open = bool(self.comp_popup) and self.comp_popup.isVisible()
+        etype = event.type()
 
-            if self.comp_popup and self.comp_popup.isVisible():
-                if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Tab):
-                    current_item = self.comp_popup.currentItem()
-                    if current_item:
-                        self._apply_completion(current_item.text().strip())
-                    return True
-                elif event.key() == Qt.Key.Key_Escape:
-                    self.comp_popup.close()
-                    return True
-                elif event.key() == Qt.Key.Key_Down:
-                    self.comp_popup.setCurrentRow(min(self.comp_popup.count() - 1, self.comp_popup.currentRow() + 1))
-                    return True
-                elif event.key() == Qt.Key.Key_Up:
-                    self.comp_popup.setCurrentRow(max(0, self.comp_popup.currentRow() - 1))
-                    return True
+        if obj is self.text.viewport():
+            if popup_open and etype == event.Type.MouseButtonPress:
+                self.comp_popup.close()
+            return super().eventFilter(obj, event)
 
+        if obj is self.text:
+            if etype == event.Type.FocusOut and popup_open:
+                self.comp_popup.close()
+            elif etype == event.Type.KeyPress:
+                key = event.key()
+                if event.modifiers() == Qt.KeyboardModifier.ControlModifier and key == Qt.Key.Key_Space:
+                    self.show_completions()
+                    return True
+    
+                if popup_open:
+                    if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Tab, Qt.Key.Key_Space):
+                        item = self.comp_popup.currentItem()
+                        if item:
+                            self._apply_completion(item.text().strip())
+                        return True
+                    if key == Qt.Key.Key_Escape:
+                        self.comp_popup.close()
+                        return True
+                    if key == Qt.Key.Key_Down:
+                        self.comp_popup.setCurrentRow(min(self.comp_popup.count() - 1, self.comp_popup.currentRow() + 1))
+                        return True
+                    if key == Qt.Key.Key_Up:
+                        self.comp_popup.setCurrentRow(max(0, self.comp_popup.currentRow() - 1))
+                        return True
+                    if key not in (Qt.Key.Key_Shift, Qt.Key.Key_Control, Qt.Key.Key_Alt, Qt.Key.Key_Meta):
+                        self.comp_popup.close()
+    
         return super().eventFilter(obj, event)
 
     def _run_async_loop(self):
@@ -595,33 +722,37 @@ class AntimatterEditor(QFrame):
         self.loop.run_forever()
 
     def start_lsp(self, file_path=None):
+        if not self.lsp_enabled:
+            return
+        if file_path and not file_path.lower().endswith(".py"):
+            return
         if not file_path:
             file_path = os.path.join(os.getcwd(), "untitled.py")
-            
+
         self._current_file_path = file_path
         root_path = os.path.dirname(os.path.abspath(file_path))
+        text = self.text.toPlainText()
 
         async def init_sequence():
-            started = await self.lsp.start("python", root_path)
-            if started:
-                await self.lsp.did_open(self._current_file_path, self.text.toPlainText())
+            await self.lsp.stop()
+            if await self.lsp.start("python", root_path):
+                await self.lsp.did_open(file_path, text)
 
         asyncio.run_coroutine_threadsafe(init_sequence(), self.loop)
 
     def _on_text_changed(self):
         self.text.set_search_highlights([])
-        self.auto_save_timer.start()
-
-        if not self.lsp.running:
-            return
-        content = self.text.toPlainText()
-        asyncio.run_coroutine_threadsafe(self.lsp.did_change(content), self.loop)
+        if self.lsp.running:
+            self.lsp_timer.start()
 
     def _on_document_changed(self):
         if self.findbar.isVisible() and self.findbar.find.text():
             self.refresh_find(select=False)
 
     def show_completions(self):
+        if self.lsp_timer.isActive():
+            self.lsp_timer.stop()
+            self._send_lsp_change()
         if not self.lsp.running:
             return
 
@@ -637,47 +768,37 @@ class AntimatterEditor(QFrame):
         asyncio.run_coroutine_threadsafe(get_comp(), self.loop)
 
     def _display_popup(self, completions):
+        self._close_popup()
         if self.comp_popup:
-            self.comp_popup.close()
-
+            self.comp_popup.deleteLater()
+    
         self._current_completions = completions
-
-        self.comp_popup = QListWidget(self.text)
-        self.comp_popup.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
-        
-        if self.text.window().windowHandle():
-            self.comp_popup.create()
-            self.comp_popup.windowHandle().setTransientParent(self.text.window().windowHandle())
-
-        self.comp_popup.setStyleSheet("""
-            QListWidget {
-                background-color: #181825;
-                color: #cdd6f4;
-                border: 1px solid #313244;
-            }
-            QListWidget::item:selected {
-                background-color: #313244;
-                color: #ffffff;
-            }
-        """)
-        
+        viewport = self.text.viewport()
+    
+        popup = QListWidget(viewport)
+        popup.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        popup.setStyleSheet(theme.popup)
         for item in completions:
-            self.comp_popup.addItem(f" {item['label']} ")
-
-        if completions:
-            self.comp_popup.setCurrentRow(0)
-
-        cursor_rect = self.text.cursorRect()
-        global_pos = self.text.mapToGlobal(cursor_rect.bottomLeft())
-        self.comp_popup.move(global_pos)
-        
-        self.comp_popup.itemClicked.connect(lambda item: self._apply_completion(item.text().strip()))
-        self.comp_popup.show()
-
+            popup.addItem(f" {item['label']} ")
+        popup.setCurrentRow(0)
+        popup.itemClicked.connect(lambda item: self._apply_completion(item.text().strip()))
+    
+        rect = self.text.cursorRect()
+        width = 280
+        height = min(200, popup.sizeHintForRow(0) * min(len(completions), 8) + 6)
+        x = min(rect.left(), max(0, viewport.width() - width))
+        y = rect.bottom() + 2
+        if y + height > viewport.height():
+            y = max(0, rect.top() - height - 2)
+    
+        popup.setGeometry(x, y, width, height)
+        popup.show()
+        popup.raise_()
+        self.comp_popup = popup
+    
     def _apply_completion(self, label):
         insert_text = next(
-            (c["insert"] for c in self._current_completions if c["label"] == label), label
-        )
+        (c["insert"] for c in self._current_completions if c["label"] == label), label)
 
         cursor = self.text.textCursor()
         cursor.select(QTextCursor.SelectionType.WordUnderCursor)
@@ -686,24 +807,13 @@ class AntimatterEditor(QFrame):
         if self.comp_popup:
             self.comp_popup.close()
 
+    def _close_popup(self, *_):
+        if self.comp_popup:
+            self.comp_popup.close()
+
     def _show_context_menu(self, pos):
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: #181825;
-                color: #cdd6f4;
-                border: 1px solid #313244;
-            }
-            QMenu::item:selected {
-                background-color: #313244;
-                color: white;
-            }
-            QMenu::separator {
-                height: 1px;
-                background-color: #89b4fa;
-                margin: 4px 8px;
-            }
-        """)
+        menu.setStyleSheet(theme.context_menu)
 
         copy_act = menu.addAction("Copy\tCtrl + C")
         copy_act.triggered.connect(self.text.copy)
@@ -736,3 +846,7 @@ class AntimatterEditor(QFrame):
 
     def delete(self, start, end):
         self.text.clear()
+
+    def shutdown(self):
+        fut = asyncio.run_coroutine_threadsafe(self.lsp.stop(), self.loop)
+        fut.add_done_callback(lambda _f: self.loop.call_soon_threadsafe(self.loop.stop))

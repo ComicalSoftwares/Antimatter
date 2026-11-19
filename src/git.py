@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QDir
 from PyQt6.QtGui import QColor
+import theme
 
 BASE_DIR = Path(__file__).resolve().parent
 ICON_PATH = str(BASE_DIR / "AppIcon.png")
@@ -25,11 +26,7 @@ class GitManagerDialog(QDialog):
         layout.setContentsMargins(10, 10, 10, 10)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid #313244; background: #19191a; border-radius: 6px; }
-            QTabBar::tab { background: #2a2a2e; color: #a6adc8; padding: 6px 14px; margin-right: 2px; border-top-left-radius: 4px; border-top-right-radius: 4px; }
-            QTabBar::tab:selected { background: #19191a; color: #cdd6f4; border-bottom: 2px solid #89b4fa; }
-        """)
+        self.tabs.setStyleSheet(theme.git_tab)
         
         self.init_status_tab()
         self.init_log_tab()
@@ -95,10 +92,7 @@ class GitManagerDialog(QDialog):
         right_layout = QVBoxLayout()
         right_layout.addWidget(QLabel("<b>File Diff Preview</b>"))
         self.diff_browser = QTextBrowser()
-        self.diff_browser.setStyleSheet(
-            "background-color: #141415; color: #cdd6f4;"
-            "border: 1px solid #313244; font-family: Consolas;"
-            "font-size: 11px; border-radius: 4px;")
+        self.diff_browser.setStyleSheet(theme.diff_browser)
         right_layout.addWidget(self.diff_browser)
         
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -170,14 +164,7 @@ class GitManagerDialog(QDialog):
         self.tabs.addTab(widget, "Remote and Sync")
 
     def table_stylesheet(self):
-        return """
-            QTableWidget {
-                background-color: #19191a; color: #cdd6f4; gridline-color: #313244;
-                border: 1px solid #313244; border-radius: 4px; font-family: Consolas; font-size: 11px;
-            }
-            QHeaderView::section { background-color: #2a2a2e; color: #cdd6f4; padding: 4px; border: none; border-bottom: 1px solid #313244; }
-            QTableWidget::item:selected { background-color: #313244; color: white; }
-        """
+        return theme.table
 
     def refresh_status(self):
         self.status_table.setRowCount(0)
@@ -206,16 +193,17 @@ class GitManagerDialog(QDialog):
                 self.status_table.setItem(row, 0, s_item)
                 self.status_table.setItem(row, 1, QTableWidgetItem(filepath))
                 row += 1
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
+            QMessageBox.critical(self, "Error", str(e))
 
     def load_selected_diff(self):
         items = self.status_table.selectedItems()
         if not items: return
         filepath = self.status_table.item(items[0].row(), 1).text()
         try:
-            res = subprocess.run(f'git diff "{filepath}"', cwd=self.project_dir, shell=True, text=True, capture_output=True)
-            diff_text = res.stdout.strip() or subprocess.run(f'git diff --cached "{filepath}"', cwd=self.project_dir, shell=True, text=True, capture_output=True).stdout.strip()
+            res = subprocess.run(["git", "diff", "--", filepath], cwd=self.project_dir, text=True, capture_output=True)
+            diff_text = res.stdout.strip() or subprocess.run(["git", "diff", "--cached", "--", filepath], cwd=self.project_dir, text=True, capture_output=True).stdout.strip()
             if not diff_text: diff_text = "(No diff available)"
             
             formatted = []
@@ -234,10 +222,10 @@ class GitManagerDialog(QDialog):
         if not items: return
         filepath = self.status_table.item(items[0].row(), 1).text()
         try:
-            subprocess.run(f'git add "{filepath}"', cwd=self.project_dir, shell=True, check=True, text=True, capture_output=True)
+            subprocess.run(["git", "add", filepath], cwd=self.project_dir, check=True, capture_output=True, text=True)
             self.refresh_status()
-        except Exception as e:
-            QMessageBox.critical(self, "Git Error", str(e))
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
 
     def do_commit(self):
         msg = self.commit_input.text().strip()
@@ -245,17 +233,17 @@ class GitManagerDialog(QDialog):
             QMessageBox.warning(self, "Commit message is required", "A commit message is required to commit changes.")
             return
         try:
-            subprocess.run(f'git commit -m "{msg}"', cwd=self.project_dir, shell=True, check=True, capture_output=True)
+            subprocess.run(["git", "commit", "-m", msg], cwd=self.project_dir, check=True, capture_output=True, text=True)
             self.commit_input.clear()
             self.refresh_status()
             self.refresh_log()
             QMessageBox.information(self, "Success", "Committed successfully!")
-        except Exception as e:
-            QMessageBox.critical(self, "Commit Error", str(e))
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
 
     def refresh_log(self):
         try:
-            res = subprocess.run('git log -n 30 --oneline', cwd=self.project_dir, shell=True, text=True, capture_output=True)
+            res = subprocess.run(["git", "log", "-n", "30", "--oneline"], cwd=self.project_dir, text=True, capture_output=True)
             self.log_browser.setPlainText(res.stdout or "No commits yet.")
         except Exception:
             self.log_browser.setPlainText("Not a git repository.")
@@ -264,27 +252,27 @@ class GitManagerDialog(QDialog):
         url = self.remote_url_input.text().strip()
         if not url: return
         try:
-            subprocess.run("git init", cwd=self.project_dir, shell=True, check=True)
-            subprocess.run(f'git remote add origin "{url}"', cwd=self.project_dir, shell=True, check=True)
+            subprocess.run(["git", "init"], cwd=self.project_dir, check=True, capture_output=True, text=True)
+            subprocess.run(["git", "remote", "add", "origin", url], cwd=self.project_dir, check=True, capture_output=True, text=True)
             QMessageBox.information(self, "Success", "Remote origin added!")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
 
     def do_pull(self):
         try:
-            subprocess.run("git pull", cwd=self.project_dir, shell=True, check=True)
+            subprocess.run(["git", "pull"], cwd=self.project_dir, check=True, capture_output=True, text=True)
             QMessageBox.information(self, "Success", "Pulled successfully!")
             self.refresh_log()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
 
     def do_push(self):
         branch = self.branch_input.text().strip() or "main"
         try:
-            subprocess.run(f"git push origin {branch}", cwd=self.project_dir, shell=True, check=True)
+            subprocess.run(["git", "push", "origin", branch], cwd=self.project_dir, check=True, capture_output=True, text=True)
             QMessageBox.information(self, "Success", f"Pushed to origin/{branch}!")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
 
 def open_git_manager(parent_window=None):
     current_path = None

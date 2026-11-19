@@ -20,11 +20,13 @@ import task # For debugging/compiling stuff
 import util # I don't remember adding this but welp.
 import terminal # sudo rm -rf /home/nyxiereal/metrolist-kmp.. Thank me later, Nyx
 import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -171537723572,1752662453 deletions (-)
-import discord
-from issues import IssuesDialog
+import discord # /ban @Rocky felt like it
+from issues import IssuesDialog # 123762 Warnings 0 Errors, seems good enough
+import theme
+import settings
+import preferences
 
-
-# Make Antimatter find out it's parent directory
+# Make Antimatter find out its parent directory
 # so it can find its own stuff
 BASE_DIR = util.BASE_DIR
 icon_path = str(BASE_DIR / "AppIcon.png")
@@ -34,6 +36,7 @@ icon_path = str(BASE_DIR / "AppIcon.png")
 class AntimatterApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.settings = settings.load()
         self.setObjectName("Comical")
         self.setWindowTitle("Comical Antimatter")
         self.resize(1050, 650)
@@ -41,73 +44,7 @@ class AntimatterApp(QMainWindow):
         self.copied_path = None
         self.setDockNestingEnabled(True)
 
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #363636;
-            }
-            QDockWidget {
-                color: #cdd6f4;
-                font-family: 'Consolas', 'Cantarell';
-                font-size: 12px;
-                border-radius=7px;
-            }
-            QDockWidget::title {
-                background: #2a2a2e;
-                padding-left: 8px;
-                padding-top: 4px;
-                padding-bottom: 4px;
-                border-bottom: 1px solid #1e1e1e;
-            }
-            QTreeView {
-                background-color: #1e1e1e;
-                color: #cdd6f4;
-                border: none;
-                font-family: 'Consolas', 'Cantarell';
-                font-size: 12px;
-                border-radius=7px;
-            }
-            QTreeView::item:hover {
-                background-color: #2a2a2e;
-            }
-            QTreeView::item:selected {
-                background-color: #313244;
-                color: #ffffff;
-            }
-            QScrollBar:vertical {
-                background: #19191a;
-                width: 10px;
-                margin: 0px;
-                border: none;
-                border-radius=7px;
-            }
-            QScrollBar:horizontal {
-                background: #19191a;
-                height: 10px;
-                margin: 0px;
-                border: none;
-                border-radius=7px;
-            }
-            QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-                background: #45475a;
-                border-radius: 4px;
-                min-height: 20px;
-                min-width: 20px;
-                border: none;
-            }
-            QScrollBar::handle:hover {
-                background: #585b70;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
-            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
-                background: none;
-                border: none;
-                width: 0px;
-                height: 0px;
-                border-radius: 7px;
-            }
-        """)
+        self.setStyleSheet(theme.window)
 
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
@@ -204,46 +141,7 @@ class AntimatterApp(QMainWindow):
         self.tabs.setMovable(True)
         self.tabs.tabCloseRequested.connect(self.close_tab_by_index)
         self.tabs.currentChanged.connect(self._on_tab_changed)
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: none;
-                background: #19191a;
-                border-radius=7px;
-            }
-            QTabBar {
-                background: #363636;
-                border-radius=7px;
-            }
-            QTabBar::tab {
-                background: #363636;
-                color: #a6adc8;
-                padding: 7px 12px;
-                font-family: 'Consolas', 'Cantarell';
-                font-size: 13px;
-                border: none;
-                border-radius=7px;
-            }
-            QTabBar::tab:selected {
-                background: #19191a;
-                color: #cdd6f4;
-                border-radius=7px;
-            }
-            QTabBar::close-button {
-                image: none;
-                subcontrol-position: right;
-                width: 14px;
-                height: 14px;
-                border-radius=7px;
-            }
-            QTabBar::tab:selected QTabBar::close-button {
-                background: #f38ba8;
-                border-radius: 7px;
-            }
-            QTabBar::tab:hover QTabBar::close-button {
-                background: #f38ba8;
-                border-radius: 7px;
-            }
-        """)
+        self.tabs.setStyleSheet(theme.tab_bar)
         self.stack.addWidget(self.tabs)
 
         # Live Terminal Widget (That's broken)
@@ -280,6 +178,11 @@ class AntimatterApp(QMainWindow):
         self.tree.setRootIndex(self.file_model.index(folder))
         for col in range(1, 4):
             self.tree.setColumnHidden(col, True)
+    
+        name = os.path.basename(folder.rstrip(os.sep)) or folder
+        self.sidebar_dock.setWindowTitle(f"{name} | File Manager")
+        self.setWindowTitle(f"{name} - Comical Antimatter")
+        self.sidebar_dock.toggleViewAction().setText("File Manager")
 
     def open_project_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Open Project Folder", QDir.homePath())
@@ -296,22 +199,7 @@ class AntimatterApp(QMainWindow):
         is_dir = self.file_model.isDir(index) if index.isValid() else True
 
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: #181825;
-                color: #cdd6f4;
-                border: 1px solid #313244;
-            }
-            QMenu::item:selected {
-                background-color: #313244;
-                color: white;
-            }
-            QMenu::separator {
-                height: 1px;
-                background-color: #89b4fa;
-                margin: 4px 8px;
-            }
-        """)
+        menu.setStyleSheet(theme.context_menu)
 
         act_new_file = menu.addAction("New File")
         act_new_folder = menu.addAction("New Folder")
@@ -359,7 +247,7 @@ class AntimatterApp(QMainWindow):
             self._tree_show_in_explorer(path or target_folder)
 
     def _tree_create_file(self, parent_dir):
-        name, ok = QInputDialog.getText(self, "New File", "Give your new file a name & an extension (e.g: test.py):")
+        name, ok = QInputDialog.getText(self, "New File", "Give your new file a name with an extension (e.g: test.py):")
         if ok and name.strip():
             target = os.path.join(parent_dir, name.strip())
             try:
@@ -374,7 +262,7 @@ class AntimatterApp(QMainWindow):
             try:
                 os.makedirs(target, exist_ok=True)
             except Exception as e:
-                QMessageBox.critical(self, "uh oh", f"Can't create folder for this exact reason:\n{e}")
+                QMessageBox.critical(self, "uh oh", f"Can't create folder for this reason:\n{e}")
 
     def _tree_paste_item(self, target_folder):
         if not self.copied_path or not os.path.exists(self.copied_path):
@@ -474,22 +362,13 @@ class AntimatterApp(QMainWindow):
 
     def _setup_menubar(self):
         menubar = self.menuBar()
-        menubar.setStyleSheet("""
-            QMenuBar { background-color: #363636; color: #cdd6f4; }
-            QMenuBar::item:selected { background-color: #5400ba; }
-            QMenu { background-color: #181825; color: #cdd6f4; border: none solid #313244; }
-            QMenu::item:selected { background-color: #313244; }
-            QMenu::separator {
-                height: 1px;
-                background-color: #89b4fa;
-                margin: 4px 8px;
-            }
-        """)
+        menubar.setStyleSheet(theme.menubar)
 
         file_menu = menubar.addMenu("File")
         file_menu.addAction("New File\tCtrl + N", self.new_file)
         file_menu.addAction("Open File\tCtrl + O", self.open_file)
-        file_menu.addAction("Open Folder...", self.open_project_folder)
+        file_menu.addAction("Open Project Folder\tCtrl + Shift + O", self.open_project_folder)
+        file_menu.addSeparator()
         file_menu.addAction("Save\tCtrl + S", self.save_file)
         file_menu.addAction("Save As\tCtrl + Shift + S", self.save_file_as)
         file_menu.addSeparator()
@@ -517,18 +396,19 @@ class AntimatterApp(QMainWindow):
             tools_menu.addSeparator()
         else:
             pass
-        tools_menu.addAction("Refresh Discord RPC", discord.init_discord)
+        tools_menu.addAction("Reset Discord RPC", discord.init_discord)
         tools_menu.addAction("Set custom Discord RPC Status", discord.custom)
         tools_menu.addSeparator()
+        tools_menu.addAction("Preferences...\tCtrl + ,", self.open_preferences)
+        tools_menu.addSeparator()
         tools_menu.addAction("Open official Antimatter Documentation\tF1", util.docs)
-        tools_menu.addAction("About Antimatter", util.about)
+        tools_menu.addAction("About Antimatter\tF2", util.about)
 
         if not task.is_sandboxed():
             git_menu = menubar.addMenu("Git")
             git_menu.addAction("Open Git Dashboard\tCtrl + G", lambda: git.open_git_manager(self))
         else:
             pass
-        
 
     def _setup_shortcuts(self):
         if not task.is_sandboxed():
@@ -545,10 +425,12 @@ class AntimatterApp(QMainWindow):
                 ("Ctrl+B", self.toggle_sidebar),
                 ("Ctrl+F", lambda: self._ed(lambda ed: ed.open_find(False))),
                 ("Ctrl+R", lambda: self._ed(lambda ed: ed.open_find(True))),
-                ("Ctrl+Shift+P", lambda: self._ed(lambda ed: ed.toggle_preview())),
                 ("F1", util.docs),
                 ("Ctrl+T", self.toggle_terminal),
                 ("Ctrl+G", lambda: git.open_git_manager(self)),
+                ("F2", util.about),
+                ("Ctrl+,", self.open_preferences),
+                ("Ctrl+Shift+O", self.open_project_folder)
             ]
         else:
             binds = [
@@ -562,8 +444,10 @@ class AntimatterApp(QMainWindow):
                 ("Ctrl+B", self.toggle_sidebar),
                 ("Ctrl+F", lambda: self._ed(lambda ed: ed.open_find(False))),
                 ("Ctrl+R", lambda: self._ed(lambda ed: ed.open_find(True))),
-                ("Ctrl+Shift+P", lambda: self._ed(lambda ed: ed.toggle_preview())),
-                ("F1", util.docs)
+                ("F1", util.docs),
+                ("F2", util.about),
+                ("Ctrl+,", self.open_preferences),
+                ("Ctrl+Shift+O", self.open_project_folder)
             ]
         for seq, fn in binds:
             action = QAction(self)
@@ -599,24 +483,13 @@ class AntimatterApp(QMainWindow):
         
         if file_path and hasattr(editor, "set_file_path"):
             editor.set_file_path(file_path)
-
+           
+        editor.apply_settings(self.settings)
         index = self.tabs.addTab(editor, title)
         
         close_btn = QPushButton("×")
         close_btn.setFixedSize(20, 20)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: white;
-                border: none;
-                font-weight: bold;
-                font-size: 13px;
-                margin-left: 0px;
-            }
-            QPushButton:hover {
-                color: #d6544b;
-            }
-        """)
+        close_btn.setStyleSheet(theme.close)
         close_btn.clicked.connect(lambda: self.close_tab_by_widget(editor))
         self.tabs.tabBar().setTabButton(index, self.tabs.tabBar().ButtonPosition.RightSide, close_btn)
 
@@ -648,6 +521,30 @@ class AntimatterApp(QMainWindow):
             pass
 
         return editor
+        
+    def open_preferences(self):
+        dlg = preferences.PreferencesDialog(self.settings, self)
+        if not dlg.exec():
+            return
+        old = self.settings
+        self.settings = dlg.result_settings
+        settings.save(self.settings)
+        self.apply_settings(old)
+
+    def apply_settings(self, old):
+        for editor in list(self.tabs_data):
+            editor.apply_settings(self.settings)
+            if not self.settings["lsp_enabled"]:
+                editor.stop_lsp()
+            elif not old["lsp_enabled"] and editor._current_file_path \
+                    and editor._current_file_path.lower().endswith(".py"):
+                editor.start_lsp(editor._current_file_path)
+    
+        if old["discord_rpc"] != self.settings["discord_rpc"]:
+            if self.settings["discord_rpc"]:
+                discord.init_discord()
+            else:
+                discord.disconnect()
 
     def mark_tab_modified(self, editor):
         if editor in self.tabs_data and not self.tabs_data[editor]["modified"]:
@@ -682,8 +579,24 @@ class AntimatterApp(QMainWindow):
         if idx != -1:
             self.close_tab_by_index(idx)
 
+    def _confirm_discard(self, widget):
+        data = self.tabs_data.get(widget)
+        if not data or not data["modified"]:
+            return True
+        self.tabs.setCurrentWidget(widget)
+        answer = QMessageBox.question(
+            self, "Unsaved changes",
+            f'"{data["title"]}" has unsaved changes. Close anyways without saving?',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        return answer == QMessageBox.StandardButton.Yes
+
     def close_tab_by_index(self, index):
         widget = self.tabs.widget(index)
+        if not self._confirm_discard(widget):
+            return
+        widget.shutdown()
         if widget in self.tabs_data:
             del self.tabs_data[widget]
         self.tabs.removeTab(index)
@@ -797,6 +710,11 @@ class AntimatterApp(QMainWindow):
             self.terminal_widget.set_focus()
 
     def closeEvent(self, event):
+        for widget in list(self.tabs_data):
+            widget.shutdown()
+            if not self._confirm_discard(widget):
+                event.ignore()
+                return
         super().closeEvent(event)
 
     def show_files(self):
@@ -813,5 +731,6 @@ if __name__ == "__main__":
     app.setDesktopFileName("io.github.comicalsoftwares.antimatter")
     window = AntimatterApp()
     window.show()
-    discord.init_discord()
+    if window.settings["discord_rpc"]:
+       discord.init_discord()
     sys.exit(app.exec())

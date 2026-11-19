@@ -1,12 +1,17 @@
 import subprocess
 import os
 import re
+import sys
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
     QPushButton, QLabel, QHeaderView, QMessageBox
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QColor
+import theme
+
+RUFF_RULES = "E9,F,B,PLE,E711,E712,E722"
+RUFF_IGNORE = "B904"
 
 class IssuesDialog(QDialog):
     def __init__(self, editor_view, parent=None):
@@ -33,31 +38,7 @@ class IssuesDialog(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        self.table.setStyleSheet("""
-            QTableWidget {
-                background-color: #19191a;
-                color: #cdd6f4;
-                gridline-color: #313244;
-                border: 1px solid #313244;
-                border-radius: 6px;
-                font-family: Consolas;
-                font-size: 12px;
-            }
-            QHeaderView::section {
-                background-color: #2a2a2e;
-                color: #cdd6f4;
-                padding: 5px;
-                border: none;
-                border-bottom: 1px solid #313244;
-            }
-            QTableWidget::item {
-                padding: 4px;
-            }
-            QTableWidget::item:selected {
-                background-color: #313244;
-                color: white;
-            }
-        """)
+        self.table.setStyleSheet(theme.issues)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.doubleClicked.connect(self.jump_to_issue)
@@ -94,45 +75,51 @@ class IssuesDialog(QDialog):
             
         if not self.file_path.lower().endswith('.py'):
             self.table.insertRow(0)
-            item = QTableWidgetItem("This is not a Python file. Finding issues only works on Python scripts.")
+            item = QTableWidgetItem("This is not a Python file. Finding issues only works with Python scripts.")
             item.setForeground(QColor("#f9e2af"))
             self.table.setItem(0, 2, item)
             return
             
         try:
-            res = subprocess.run(f'pyflakes "{self.file_path}"', capture_output=True, text=True, shell=True)
-            output = res.stdout + res.stderr
-            lines = output.splitlines()
-            
+            res = subprocess.run([sys.executable, "-m", "ruff", "check", "--isolated","--select", RUFF_RULES, "--ignore", RUFF_IGNORE,"--output-format=concise", self.file_path],capture_output=True, text=True)
+            lines = (res.stdout + res.stderr).splitlines()
+
             row = 0
             pattern = re.compile(r'^(?:.*?:)?(\d+)(?::(\d+))?:\s*(.*)$')
-            
+
             for line in lines:
                 m = pattern.search(line)
-                if m:
-                    lineno = m.group(1)
-                    col = m.group(2) or "1"
-                    msg = m.group(3)
+                if not m:
+                    continue
+        
+                lineno = m.group(1)
+                col = m.group(2) or "1"
+                msg = m.group(3)
+                code = msg.split()[0]
+
+                text = re.sub(r"^\S+\s+(\[\*\]\s+)?", "", msg).replace("`", "'")
+                text = text[:1].upper() + text[1:]
+        
+                kind = "Error" if code.startswith(("E9", "F821", "F822", "F823", "PLE")) else "Warning"
+                self.table.insertRow(row)
+                pos_item = QTableWidgetItem(f"{lineno}:{col}")
+                pos_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                pos_item.setData(Qt.ItemDataRole.UserRole, (int(lineno), int(col)))
                     
-                    self.table.insertRow(row)
-                    
-                    pos_item = QTableWidgetItem(f"{lineno}:{col}")
-                    pos_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                    pos_item.setData(Qt.ItemDataRole.UserRole, (int(lineno), int(col)))
-                    
-                    type_item = QTableWidgetItem("Warning" if "undefined" in msg.lower() or "unused" in msg.lower() else "Error")
-                    type_item.setForeground(QColor("#f38ba8") if "Error" in type_item.text() else QColor("#f9e2af"))
-                    
-                    msg_item = QTableWidgetItem(msg)
-                    
-                    self.table.setItem(row, 0, pos_item)
-                    self.table.setItem(row, 1, type_item)
-                    self.table.setItem(row, 2, msg_item)
-                    row += 1
+                type_item = QTableWidgetItem(kind)
+                type_item.setForeground(QColor("#f38ba8") if kind == "Error" else QColor("#f9e2af"))
             
-            if row == 0 and not output.strip():
+                msg_item = QTableWidgetItem(text)
+                msg_item.setToolTip(f"Rule {code}")
+        
+                self.table.setItem(row, 0, pos_item)
+                self.table.setItem(row, 1, type_item)
+                self.table.setItem(row, 2, msg_item)
+                row += 1
+
+            if row == 0:
                 self.table.insertRow(0)
-                item = QTableWidgetItem("No issues detected. Good Job !")
+                item = QTableWidgetItem("No issues detected. Nice !")
                 item.setForeground(QColor("#a6e3a1"))
                 self.table.setItem(0, 2, item)
         except Exception as e:

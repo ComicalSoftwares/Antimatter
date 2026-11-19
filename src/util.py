@@ -12,8 +12,9 @@ from PyQt6.QtWidgets import QFileDialog, QMessageBox, QDialog, QVBoxLayout, QPus
 from pathlib import Path
 from PyQt6.QtCore import Qt
 import html
+import theme
 
-CURRENT_VERSION = "1.8" # The new fire release
+CURRENT_VERSION = "1.9" # The new fire release
 BASE_DIR = Path(__file__).resolve().parent
 
 def project():
@@ -91,31 +92,9 @@ def about_window(content, is_html=False):
     logo_label.setStyleSheet("background: transparent;")
     logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     btn = QPushButton("Close", dlg)
-    btn.setStyleSheet("""
-        QPushButton {
-            background-color: #1f1f1f;
-            color: #cdd6f4;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-        }
-        QPushButton:hover {
-            background-color: #45475a;
-        }
-    """)
+    btn.setStyleSheet(theme.close_btn)
     btn2 = QPushButton("Visit the Github repository", dlg)
-    btn2.setStyleSheet("""
-        QPushButton {
-            background-color: #1f1f1f;
-            color: #cdd6f4;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-        }
-        QPushButton:hover {
-            background-color: #45475a;
-        }
-    """)
+    btn2.setStyleSheet(theme.close_btn)
     title_label = QLabel("Comical Antimatter")
     title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title_label.setStyleSheet("color: white; font-family: 'Consolas', 'Cantarell'; font-size: 30px; font-weight: bold; background: transparent;")
@@ -132,38 +111,7 @@ def about_window(content, is_html=False):
         about_text.setPlainText(content)
         
     about_text.setReadOnly(True)
-    about_text.setStyleSheet("""
-        QTextBrowser {
-            background-color: #19191a;
-            color: #cdd6f4;
-            border: None;
-            font-family: Consolas;
-            font-size: 14px;
-            border-radius: 7px;
-        }
-        QScrollBar:vertical {
-            background: #19191a;
-            width: 10px;
-            margin: 0px;
-            border: none;
-        }
-        QScrollBar:horizontal {
-            background: #19191a;
-            height: 10px;
-            margin: 0px;
-            border: none;
-        }
-        QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-            background: #45475a;
-            border-radius: 4px;
-            min-height: 20px;
-            min-width: 20px;
-            border: none;
-        }
-        QScrollBar::handle:hover {
-            background: #585b70;
-        }
-    """)
+    about_text.setStyleSheet(theme.code)
     btn.clicked.connect(dlg.accept)
     btn2.clicked.connect(lambda: webbrowser.open("https://github.com/ComicalSoftwares/Antimatter/"))
     layout.addWidget(logo_label)

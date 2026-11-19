@@ -7,6 +7,7 @@ import re
 from PyQt6.QtCore import QSocketNotifier, Qt
 from PyQt6.QtGui import QTextCursor, QTextCharFormat, QColor, QFont, QGuiApplication
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QPlainTextEdit, QMenu
+import theme
 
 COMBINED_ESCAPE = re.compile(r'''
     (\x1b\].*?(?:\x07|\x1b\\))|
@@ -19,14 +20,7 @@ SUDO_PROMPT_PATTERN = re.compile(r'(?i)\[sudo\] password for .*:|password:')
 class NativeTerminalWidget(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setStyleSheet("""
-            QPlainTextEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                font-family: 'Consolas', 'Monospace';
-                font-size: 11pt;
-            }
-        """)
+        self.setStyleSheet(theme.terminal)
         self.setUndoRedoEnabled(False)
         self.master_fd = None
         self.notifier = None
@@ -242,22 +236,7 @@ class NativeTerminalWidget(QPlainTextEdit):
             
     def _show_context_menu(self, pos):
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: #181825;
-                color: #cdd6f4;
-                border: 1px solid #313244;
-            }
-            QMenu::item:selected {
-                background-color: #313244;
-                color: white;
-            }
-            QMenu::separator {
-                height: 1px;
-                background-color: #89b4fa;
-                margin: 4px 8px;
-            }
-        """)
+        menu.setStyleSheet(theme.context_menu)
 
         copy_act = menu.addAction("Copy\tCtrl + Shift + C")
         copy_act.triggered.connect(self.copy)
