@@ -4,4 +4,6 @@ src/__pycache__/
 .vscode/
 Flatpak/repo
 Flatpak/build
+build-dir
+repo
 
