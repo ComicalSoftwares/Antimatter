@@ -24,8 +24,8 @@ A modern, lightweight and absurdly optimized Python IDE written in **Python and 
 Antimatter is free & open-source ! _(Obviously !)_
 
 ### Latest release: Version 1.7.1 - BETA
-- **Windows installer**: 1.6 (`R.I.P` _We recently dropped support for Windows._) [antimatter_setup.exe](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.6/antimatter_setup.exe)
-- **Linux**: [1.7.1](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.7.1)
+- **Windows installer**: 1.6 (_We temporarily dropped support for Windows._) [Get here.](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.6/antimatter_setup.exe)
+- **Linux**: [Get here.](https://github.com/ComicalSoftwares/Antimatter/releases/)
 
 ## Libraries and ressources used
 - **UI**: PyQT6 & PySide6
@@ -42,7 +42,7 @@ These components are:
 - **A working PC**: What ? You thought it was gonna work on a phone ? Be real.
 - **Python 3.14 or newer**: This is the most recommended version. You can also use any other Python 3.x release with Antimatter, just don't use anything as old as Python 2 or else the editor will fail to render their syntax and might corrupt them.
 - **A compiler (optional)**: If you ship production-ready apps using python, then it is better to have something like "pyinstaller" or "nuitka" installed.
-- **Windows/Linux as your main OS**: You need to use Windows/Linux to run Antimatter. You can build the software from source for your OS but we'll provide no form of support in that case (especially with macOS users).
+- **Windows/Linux as your main OS**: You need to use Windows/Linux to run Antimatter. If you wish to run a release that is unavailable to your OS, then you can try to build the software from source. However, we'll provide no form of support in that case (especially with macOS users).
 
 ## Screenshots & Demo
 >[!Note]
@@ -63,25 +63,25 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] File opening/saving.
 - [X] Automated compiling (works by using [build templates](https://github.com/ComicalSoftwares/Antimatter/wiki/Quick-Start-Guide/#building-your-project)).
 - [X] Keyboard Shortcuts.
-- [X] Issues finder.
+- [X] Issues finder. **(Uses Ruff now)**
 - [X] Tabs.
-- [X] Editing Markdown. _(Can't preview tho, which is not something I plan to add)_
+- [X] Editing Markdown. _(Can't preview tho, not something I plan to add)_
 - [X] LSP and suggestions **(BETA - Needs more Work)**
 ### Debugging and managing projects
 - [X] File manager.
 - [X] Live terminal (Beta, needs some work)
 - [X] Running Scripts
 ### Customization
-- [ ] Preferences
+- [X] Preferences
 - [ ] Themes
-- [ ] Custom fonts
+- [X] Custom fonts
 - [ ] Modify position of the sidebar (File Manager) **(Exists but it doesn't save the new position)**
 ### Git support
 - [X] Git clone
 - [X] Git commit
 - [X] Git Push
 - [X] Git Sync
-- [X] Git Dahsboard **(NEW !)**
+- [X] Git Dahsboard (To do all of the actions mentioned above)
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:
