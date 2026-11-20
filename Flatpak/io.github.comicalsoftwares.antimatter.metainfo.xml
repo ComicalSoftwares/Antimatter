@@ -87,7 +87,7 @@
   </screenshots>
 
   <releases>
-    <release version="1.9" date="2026-11-19">
+    <release version="1.9" date="2026-11-20">
       <description translate="no">
         <p>QOL improvements and bugfixes</p>
         <ul>
@@ -99,6 +99,7 @@
           <li>Code editor now remembers identation and highlights current line for easier script editing.</li>
           <li>Fixed issue where resetting discord RPC doesn't work.</li>
           <li>Added Preferences.</li>
+          <li>Fixed an issue where files doen't save with their extension unless if it was explicitely specified.</li>
         </ul>
       </description>
     </release>
