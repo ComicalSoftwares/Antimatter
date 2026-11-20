@@ -243,10 +243,46 @@ class GitManagerDialog(QDialog):
 
     def refresh_log(self):
         try:
-            res = subprocess.run(["git", "log", "-n", "30", "--oneline"], cwd=self.project_dir, text=True, capture_output=True)
-            self.log_browser.setPlainText(res.stdout or "No commits yet.")
-        except Exception:
+            res = subprocess.run(
+                ["git", "log", "-n", "30", "--pretty=format:%h%x1f%s"],
+                cwd=self.project_dir,
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            lines = [line for line in res.stdout.splitlines() if line.strip()]
+            if not lines:
+                self.log_browser.setPlainText("No commits yet.")
+                return
+
+            entries = []
+            for idx, line in enumerate(lines):
+                parts = line.split("\x1f", 1)
+                short_hash = html.escape(parts[0])
+                subject = html.escape(parts[1] if len(parts) > 1 else "")
+
+                if idx == 0:
+                    # Latest commit: green commit hash and larger
+                    entries.append(
+                        f'<div style="margin-bottom: 6px;">'
+                        f'<span style="color: #a6e3a1; font-size: 20px; font-weight: bold;">{short_hash}</span> '
+                        f'<span style="color: #e6f4ea; font-size: 20px; font-weight: bold;">{subject}</span>'
+                        f'</div>'
+                    )
+                else:
+                    # Older commits: purple commit hash
+                    entries.append(
+                        f'<div style="margin-bottom: 3px;">'
+                        f'<span style="color: #cba6f7; font-size: 13px;">{short_hash}</span> '
+                        f'<span style="color: #cdd6f4; font-size: 13px;">{subject}</span>'
+                        f'</div>'
+                    )
+
+            self.log_browser.setHtml("".join(entries))
+        except subprocess.CalledProcessError:
             self.log_browser.setPlainText("Not a git repository.")
+        except Exception as e:
+            self.log_browser.setPlainText(str(e))
 
     def set_remote_repo(self):
         url = self.remote_url_input.text().strip()
