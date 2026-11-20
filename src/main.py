@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
 import codeview # Codeview, my beloved
 import task # For debugging/compiling stuff
 import util # I don't remember adding this but welp.
-import terminal # sudo rm -rf /home/nyxiereal/metrolist-kmp.. Thank me later, Nyx
+import terminal # sudo rm -rf /* --yes-preserve-root  (Uh yeah so don't run that tho)
 import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -171537723572,1752662453 deletions (-)
 import discord # /ban @Rocky felt like it
 from issues import IssuesDialog # 123762 Warnings 0 Errors, seems good enough
@@ -27,7 +27,7 @@ import settings
 import preferences
 
 # Make Antimatter find out its parent directory
-# so it can find its own stuff
+# so it can load its own stuff
 BASE_DIR = util.BASE_DIR
 icon_path = str(BASE_DIR / "AppIcon.png")
 
@@ -112,8 +112,8 @@ class AntimatterApp(QMainWindow):
         # File System Viewer
         self.file_model = QFileSystemModel()
         self.tree = QTreeView()
-        self.tree.setModel(None)  # So we can force user to chose a folder, which will allow the git module 
-                                  # be able to get the folder's abs path so it can fianlly manage it.
+        self.tree.setModel(None)  # So we can force user to chose a folder, which will allow the git module to
+                                  # be able to get the folder's abs path so it can finally manage it.
         self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._show_tree_context_menu)
         self.tree.header().hide()
@@ -634,22 +634,34 @@ class AntimatterApp(QMainWindow):
         self.open_file_by_path(path)
 
     def save_file_as(self):
+        EXTENSION_MAP = {
+            "Python (*.py)": ".py",
+            "Markdown (*.md)": ".md",
+            "Text (*.txt)": ".txt",
+        }
         editor = self.get_current_editor()
         if not editor:
             return False
-
-        path2, _ = QFileDialog.getSaveFileName(
-            self, "Save file As", "", "Python (*.py);;Markdown (*.md);;Text (*.txt);;All files (*.*)"
-        )
+    
+        filters = "Python (*.py);;Markdown (*.md);;Text (*.txt);;All files (*.*)"
+        path2, selected_filter = QFileDialog.getSaveFileName(self, "Save file As", "", filters)
         if not path2:
             return False
-
+    
+        file_path = Path(path2)
+        if not file_path.suffix:
+            ext = EXTENSION_MAP.get(selected_filter, "")
+            if ext:
+                file_path = file_path.with_suffix(ext)
+    
+        path2 = str(file_path)
+    
         try:
             content = editor.get()
             with open(path2, "w", encoding="utf-8") as f:
                 f.write(content)
-
-            filename = Path(path2).name
+    
+            filename = file_path.name
             self.tabs_data[editor]["path"] = path2
             self.tabs_data[editor]["title"] = filename
             self.mark_tab_saved(editor)
