@@ -199,6 +199,8 @@ class AntimatterApp(QMainWindow):
         is_dir = self.file_model.isDir(index) if index.isValid() else True
 
         menu = QMenu(self)
+        menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint)
+        menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         menu.setStyleSheet(theme.context_menu)
 
         act_new_file = menu.addAction("New File")
