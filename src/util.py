@@ -111,7 +111,7 @@ def about_window(content, is_html=False):
         about_text.setPlainText(content)
         
     about_text.setReadOnly(True)
-    about_text.setStyleSheet(theme.code)
+    about_text.setStyleSheet("background-color: #19191a; border-radius: 7px; font-family: 'Consolas', 'Cantarell'; font-size: 15px; color: #cdd6f4;")
     btn.clicked.connect(dlg.accept)
     btn2.clicked.connect(lambda: webbrowser.open("https://github.com/ComicalSoftwares/Antimatter/"))
     layout.addWidget(logo_label)
