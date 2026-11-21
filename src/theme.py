@@ -54,11 +54,10 @@ tab_bar ="""
             QTabBar::tab {
                 background: #363636;
                 color: #a6adc8;
-                padding: 7px 12px;
+                padding: 7px 7px;
                 font-family: 'Consolas', 'Cantarell';
                 font-size: 13px;
-                border: none;
-                
+                border: none;  
             }
             QTabBar::tab:selected {
                 background: #19191a;
@@ -155,6 +154,7 @@ context_menu = """
                 background-color: #181825;
                 color: #cdd6f4;
                 border: 1px solid #313244;
+                padding: 3px
             }
             QMenu::item:selected {
                 background-color: #313244;
@@ -170,7 +170,7 @@ context_menu = """
 menubar = """
             QMenuBar { background-color: #363636; color: #cdd6f4; }
             QMenuBar::item:selected { background-color: #5400ba; }
-            QMenu { background-color: #181825; color: #cdd6f4; border: none solid #313244; }
+            QMenu { background-color: #181825; color: #cdd6f4; border: 1px solid #313244; padding: 3px;}
             QMenu::item:selected { background-color: #313244; }
             QMenu::separator {
                 height: 1px;
@@ -178,6 +178,7 @@ menubar = """
                 margin: 4px 8px;
             }
         """
+
 close = """
             QPushButton {
                 background: transparent;
@@ -202,9 +203,15 @@ code = """
         """
         
 findbar = """
-            FindBar { 
-                background: #19191a; 
-                border-bottom: 3px solid #313244; 
+            FindBar {
+                background: #19191a;
+                border-bottom: 3px solid #313244;
+            }
+            QLineEdit {
+                background: #19191a;
+                color: #cdd6f4;
+                border-radius: 6px;
+                padding: 4px 8px;
             }
             QToolTip {
                 background-color: #181825;
@@ -227,13 +234,13 @@ git_tab = """
         
 diff_browser = """
             background-color: #141415; color: #cdd6f4;
-            border: 1px solid #313244; font-family: Consolas;
+            font-family: Consolas;
             font-size: 11px; border-radius: 4px;"""
 
 table = """
             QTableWidget {
                 background-color: #19191a; color: #cdd6f4; gridline-color: #313244;
-                border: 1px solid #313244; border-radius: 4px; font-family: Consolas; font-size: 11px;
+                border: 1px solid #313244; font-family: Consolas; font-size: 11px;
             }
             QHeaderView::section { background-color: #2a2a2e; color: #cdd6f4; padding: 4px; border: none; border-bottom: 1px solid #313244; }
             QTableWidget::item:selected { background-color: #313244; color: white; }
@@ -333,3 +340,23 @@ QPushButton {
 }
 QPushButton:hover { background: #45475a; }
 """.replace("__ASSETS__", ASSETS)
+
+flat_button_style = """
+            QToolButton {
+                background-color: transparent;
+                color: #cdd6f4;
+                border: none;
+                outline: none;
+                padding: 4px 8px;
+                border-radius: 7px;
+            }
+            QToolButton:hover {
+                background-color: #2a2a2e;
+                border: none;
+            }
+            QToolButton:pressed, QToolButton:checked {
+                background-color: #5400ba;
+                color: #ffffff;
+                border: none;
+            }
+        """
