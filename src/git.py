@@ -111,7 +111,7 @@ class GitManagerDialog(QDialog):
         layout = QVBoxLayout(widget)
         layout.addWidget(QLabel("<b>Commit History</b>"))
         self.log_browser = QTextBrowser()
-        self.log_browser.setStyleSheet("background-color: #141415; color: #cdd6f4; border: 1px solid #313244; font-family: Consolas; font-size: 12px; border-radius: 4px;")
+        self.log_browser.setStyleSheet("background-color: #141415; color: #cdd6f4; border: none; font-family: Consolas; font-size: 12px; border-radius: 4px;")
         layout.addWidget(self.log_browser)
         
         log_btn = QPushButton("Refresh Log")
