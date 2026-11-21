@@ -454,11 +454,9 @@ class FindBar(QFrame):
         r2 = QHBoxLayout(self.row2)
         r2.setContentsMargins(0, 0, 0, 0)
         self.repl = QLineEdit(placeholderText="Replace with")
-        self.repl.setStyleSheet(theme.flat_input_style)
         b_rep, b_all = QToolButton(text="Replace"), QToolButton(text="Replace all")
         for btn in (b_rep, b_all):
             btn.setStyleSheet(theme.flat_button_style)
-        self.find.setStyleSheet(theme.flat_input_style)
 
         r2.addWidget(self.repl)
         r2.addWidget(b_rep)
