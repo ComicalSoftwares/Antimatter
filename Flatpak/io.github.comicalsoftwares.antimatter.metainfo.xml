@@ -18,7 +18,7 @@
           <li>Full Discord Rich Presence Support.</li>
           <li>Lightweight and responsive UI.</li>
           <li>A sleek, PyQT6 Interface built from the ground up to beautifully integrate with the KDE Plasma desktop environment.</li>
-          <li>Quickly find the bugs that stop you from running your Python scripts.</li>
+          <li>Quickly find the bugs that stop you from running your Python scripts using Ruff.</li>
         </ul>
   </description>
 
@@ -64,13 +64,10 @@
   
   <requires>
     <display_length compare="ge">500</display_length>
-  </requires>
-
-  <recommends>
     <control>keyboard</control>
     <control>pointing</control>
-  </recommends>
-
+  </requires>
+  
   <screenshots>
     <screenshot type="default">
       <image>https://github.com/ComicalSoftwares/Antimatter/blob/main/Screenshots/Flathub/Edit.png?raw=true</image>

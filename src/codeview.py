@@ -442,6 +442,10 @@ class FindBar(QFrame):
         prev = QToolButton(text="↑", toolTip="Previous (Shift+Enter)")
         nxt = QToolButton(text="↓", toolTip="Next (Enter)")
         close = QToolButton(text="×", toolTip="Close (Esc)")
+
+        for btn in (self.case, prev, nxt, close):
+            btn.setStyleSheet(theme.flat_button_style)
+
         for w in (self.find, self.count, self.case, prev, nxt, close):
             row1.addWidget(w)
         outer.addLayout(row1)
@@ -450,7 +454,12 @@ class FindBar(QFrame):
         r2 = QHBoxLayout(self.row2)
         r2.setContentsMargins(0, 0, 0, 0)
         self.repl = QLineEdit(placeholderText="Replace with")
+        self.repl.setStyleSheet(theme.flat_input_style)
         b_rep, b_all = QToolButton(text="Replace"), QToolButton(text="Replace all")
+        for btn in (b_rep, b_all):
+            btn.setStyleSheet(theme.flat_button_style)
+        self.find.setStyleSheet(theme.flat_input_style)
+
         r2.addWidget(self.repl)
         r2.addWidget(b_rep)
         r2.addWidget(b_all)
@@ -813,6 +822,8 @@ class AntimatterEditor(QFrame):
 
     def _show_context_menu(self, pos):
         menu = QMenu(self)
+        menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.FramelessWindowHint | Qt.WindowType.NoDropShadowWindowHint)
+        menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         menu.setStyleSheet(theme.context_menu)
 
         copy_act = menu.addAction("Copy\tCtrl + C")
