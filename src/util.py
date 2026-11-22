@@ -32,7 +32,7 @@ def project():
         QMessageBox.critical(None, "Error", "Couldn't configure project: Invalid Directory")
 
 def docs():
-    webbrowser.open("https://antimatter.codelyteam.com/#docs/Quick-Start-Guide")
+    webbrowser.open("https://comicalsoftwares.github.io/Antimatter/#docs/Quick-Start-Guide")
 
 def update():
     update_url = "https://api.github.com/repos/ComicalSoftwares/Antimatter/releases/latest"
