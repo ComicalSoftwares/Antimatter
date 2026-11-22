@@ -11,7 +11,7 @@
 [![Stars](https://img.shields.io/github/stars/ComicalSoftwares/Antimatter?style=flat-square&color=b7791f)](https://github.com/ComicalSoftwares/Antimatter/stargazers)
 [![Discord](https://img.shields.io/badge/discord-Comical%20Games-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/UubHnUNEc7)
 
-A modern, lightweight and absurdly optimized Python IDE written in **Python and PyQT6**
+A modern, fast and responsive Python/Markdown IDE written in **Python and PyQt6**
 </div>
 
 > [!WARNING]
@@ -31,24 +31,24 @@ A modern, lightweight and absurdly optimized Python IDE written in **Python and 
 ## Download today !
 Antimatter is free & open-source ! _(Obviously !)_
 
-### Latest release: Version 1.9 - BETA
+### Latest release:
 - **Windows installer**: (_Stuck on 1.6 because we dropped support for Windows._) [Get here.](https://github.com/ComicalSoftwares/Antimatter/releases/download/1.6/antimatter_setup.exe)
-- **Linux**: [Get here.](https://github.com/ComicalSoftwares/Antimatter/releases/)
+- **Linux**: Version 1.9 - BETA [Get here.](https://github.com/ComicalSoftwares/Antimatter/releases/)
 
-## Libraries and ressources used
-- **UI**: PyQT6 & PySide6
+## Libraries and resources used
+- **UI**: PyQT6
 - **Code-viewing backend**: Fully custom code-viewer backend, capable of syntax highlighting and loading multiple large scripts in seconds !
 - **Rich Presence Framework**: Pypresence
-- **Language used**: As said earlier, Python is the main language used for the project.
-- **Issues finding**: Using Pyflakes, it can find most problems with the script that may stop it from launching.
+- **Language used**: As said earlier, Python is the main language used for the project. For the website, it's fully in HTML
+- **Issues finding**: Using Ruff, it can find most problems with the script that may stop it from launching.
 
 ## Prerequisites
 Antimatter relies on separately installed components/modules to function properly.
 
 These components are:
-- **Pyflakes**: For finding issues
-- **A working PC**: What ? You thought it was gonna work on a phone ? Be real.
-- **Python 3.14 or newer**: This is the most recommended version. You can also use any other Python 3.x release with Antimatter, just don't use anything as old as Python 2 or else the editor will fail to render their syntax and might corrupt them.
+- **Ruff**: For finding issues
+- **A working PC**: What ? You thought it was gonna work on a phone ? Be real my friend.
+- **Python 3.14 or newer**: The project was developed and tested using Python 3.14. You can also use any other Python 3.x release with Antimatter, just don't use anything as old as Python 2 or else the editor will fail to render their syntax and might corrupt them.
 - **A compiler (optional)**: If you ship production-ready apps using python, then it is better to have something like "pyinstaller" or "nuitka" installed.
 - **Windows/Linux as your main OS**: You need to use Windows/Linux to run Antimatter. If you wish to run a release that is unavailable to your OS, then you can try to build the software from source. However, we'll provide no form of support in that case (especially with macOS users).
 
@@ -67,14 +67,14 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 
 ### Main programming experience:
 - [X] Code syntax highlighting.
-- [X] Native GPU-accelerated rendering.
+- [X] Fast and reliable UI.
 - [X] File opening/saving.
 - [X] Automated compiling (works by using [build templates](https://github.com/ComicalSoftwares/Antimatter/wiki/Quick-Start-Guide/#building-your-project)).
 - [X] Keyboard Shortcuts.
 - [X] Issues finder. **(Uses Ruff now)**
 - [X] Tabs.
 - [X] Editing Markdown. _(Can't preview tho, not something I plan to add)_
-- [X] LSP and suggestions **(BETA - Needs more Work)**
+- [X] LSP and completions **(BETA - Needs more Work)**
 ### Debugging and managing projects
 - [X] File manager.
 - [X] Live terminal (Beta, needs some work)
@@ -89,7 +89,7 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] Git commit
 - [X] Git Push
 - [X] Git Sync
-- [X] Git Dahsboard (To do all of the actions mentioned above)
+- [X] Git dashboard (To do all of the actions mentioned above)
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:
