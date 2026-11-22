@@ -3,6 +3,14 @@
 <img width="241" height="241" alt="AppIcon" src="https://github.com/user-attachments/assets/aecbdeb4-5fc7-4f77-b4b1-908c5e0626d0" />
 
 # Antimatter
+[![Version](https://img.shields.io/github/v/release/ComicalSoftwares/Antimatter?style=flat-square&color=2b6cb0)](https://github.com/ComicalSoftwares/Antimatter/releases)
+[![Flathub](https://img.shields.io/badge/flathub-available-2b6cb0?style=flat-square&logo=flathub&logoColor=white)](https://flathub.org/en/apps/io.github.comicalsoftwares.antimatter)
+[![License](https://img.shields.io/github/license/ComicalSoftwares/Antimatter?style=flat-square&color=4a5568)](https://github.com/ComicalSoftwares/Antimatter/blob/main/LICENSE.md)
+![Python](https://img.shields.io/badge/python-3.14%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![PyQt6](https://img.shields.io/badge/ui-PyQt6-2f855a?style=flat-square&logo=qt&logoColor=white)
+[![Stars](https://img.shields.io/github/stars/ComicalSoftwares/Antimatter?style=flat-square&color=b7791f)](https://github.com/ComicalSoftwares/Antimatter/stargazers)
+[![Discord](https://img.shields.io/badge/discord-Comical%20Games-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/UubHnUNEc7)
+
 A modern, lightweight and absurdly optimized Python IDE written in **Python and PyQT6**
 </div>
 
