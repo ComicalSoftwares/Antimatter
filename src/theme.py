@@ -1,4 +1,4 @@
-# Inherited from a random repo online, gotta clean up this or make use of it later
+# Contains Antimatter's core QSS style
 
 from PyQt6.QtGui import QFont
 from pathlib import Path
@@ -293,6 +293,22 @@ close_btn = """
             background-color: #45475a;
         }
     """
+    
+btn = '''
+QPushButton {
+    background-color: #242426;
+    color: #f2f2f5;
+    border: 1px solid #323236;
+    padding: 6px 12px;
+    border-radius: 15px;
+}
+QPushButton:hover {
+    background-color: #2f2f33;
+}
+QPushButton:pressed {
+    background-color: #1c1c1e;
+}
+'''
     
 settings = """
 QDialog { background: #1e1e1e; }
