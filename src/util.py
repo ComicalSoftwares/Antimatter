@@ -1,4 +1,4 @@
-# Antimatter's utilities module (which I forgot existed)
+# Antimatter's utilities module
 
 import json
 import webbrowser
@@ -14,7 +14,7 @@ from PyQt6.QtCore import Qt
 import html
 import theme
 
-CURRENT_VERSION = "1.9" # The new fire release
+CURRENT_VERSION = "2.0 - BETA" # We moving so fast..
 BASE_DIR = Path(__file__).resolve().parent
 
 def project():
@@ -91,14 +91,14 @@ def about_window(content, is_html=False):
         logo_label.setGraphicsEffect(effect)
     logo_label.setStyleSheet("background: transparent;")
     logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    btn = QPushButton("Close", dlg)
-    btn.setStyleSheet(theme.close_btn)
+    btn1 = QPushButton("Close", dlg)
+    btn1.setStyleSheet(theme.btn)
     btn2 = QPushButton("Visit the Github repository", dlg)
-    btn2.setStyleSheet(theme.close_btn)
+    btn2.setStyleSheet(theme.btn)
     title_label = QLabel("Comical Antimatter")
     title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title_label.setStyleSheet("color: white; font-family: 'Consolas', 'Cantarell'; font-size: 30px; font-weight: bold; background: transparent;")
-    footer_label = QLabel(f"Version {CURRENT_VERSION} - Beta")
+    footer_label = QLabel(f"v.{CURRENT_VERSION}")
     footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     footer_label.setStyleSheet("color: #8a79a3; font-family: 'Consolas', 'Cantarell'; font-size: 13px; background: transparent;")
     footer_label2 = QLabel("This project is open-source and licensed under the MIT license.")
@@ -111,16 +111,17 @@ def about_window(content, is_html=False):
         about_text.setPlainText(content)
         
     about_text.setReadOnly(True)
-    about_text.setStyleSheet("background-color: #19191a; border-radius: 7px; font-family: 'Consolas', 'Cantarell'; font-size: 15px; color: #cdd6f4;")
-    btn.clicked.connect(dlg.accept)
+    about_text.setStyleSheet("background-color: #19191a; border-radius: 15px; font-family: 'Consolas', 'Cantarell'; font-size: 15px; color: #cdd6f4;")
+    btn1.clicked.connect(dlg.accept)
     btn2.clicked.connect(lambda: webbrowser.open("https://github.com/ComicalSoftwares/Antimatter/"))
     layout.addWidget(logo_label)
     layout.addWidget(title_label)
     layout.addWidget(footer_label)
     layout.addWidget(footer_label2)
     layout.addWidget(about_text)
-    layout.addWidget(btn2)
-    layout.addWidget(btn)
+    for btn in (btn2, btn1):
+        btn.setFixedWidth(440)
+        layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignHCenter)
     dlg.exec()
 
 def about():
