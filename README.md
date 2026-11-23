@@ -71,21 +71,25 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] File opening/saving.
 - [X] Automated compiling (works by using [build templates](https://github.com/ComicalSoftwares/Antimatter/wiki/Quick-Start-Guide/#building-your-project)).
 - [X] Keyboard Shortcuts.
-- [X] Issues finder. **(Uses Ruff now)**
 - [X] Tabs.
 - [X] Editing Markdown. _(Can't preview tho, not something I plan to add)_
 - [X] LSP and completions **(BETA - Needs more Work)**
-### Debugging and managing projects
+- [ ] Go to definition.
+- [ ] Find references.
+- [ ] Dynamic symbols/methods renaming.
+- [ ] Multi-cursor editing (Game changer for bulk multi-line editing)
+### Debugging, testing scripts & managing files
 - [X] File manager.
-- [X] Live terminal (Beta, needs some work)
+- [X] Live terminal (Beta)
 - [X] Running Scripts
+- [X] Issues finder.
 ### Customization
 - [X] Preferences
-- [ ] Themes
+- [ ] Custom Themes
 - [X] Custom fonts
 - [ ] Modify position of the sidebar (File Manager) **(Exists but it doesn't save the new position)**
 ### Git support
-- [X] Git clone
+- [ ] Git clone (Will re-add)
 - [X] Git commit
 - [X] Git Push
 - [X] Git Sync
