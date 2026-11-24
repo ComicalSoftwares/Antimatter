@@ -67,7 +67,7 @@ class GitManagerDialog(QDialog):
         left_layout.addWidget(self.status_table)
         
         btn_box = QHBoxLayout()
-        stage_btn = QPushButton("Stage Selected File")
+        stage_btn = QPushButton("Stage This File")
         stage_btn.setStyleSheet("background-color: #313244; color: #a6e3a1; border: none; padding: 8px; border-top-left-radius: 15px; border-bottom-left-radius: 15px;")
         stage_btn.clicked.connect(self.stage_selected)
         
@@ -126,7 +126,7 @@ class GitManagerDialog(QDialog):
     def init_remote_tab(self):
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.addWidget(QLabel("<b>Remote Synchronization and Branching</b>"))
+        layout.addWidget(QLabel("<b>Remote Synchronization / Branching</b>"))
         
         form_layout = QVBoxLayout()
         form2_layout = QHBoxLayout()
@@ -137,7 +137,7 @@ class GitManagerDialog(QDialog):
         init_repo_btn = QPushButton("Initialize and Set Remote")
         init_repo_btn.setStyleSheet("background-color: #313244; color: #89b4fa; border: none; padding: 8px; border-top-left-radius: 15px; border-bottom-left-radius: 15px;")
         init_repo_btn.clicked.connect(self.set_remote_repo)
-        clone_repo_btn = QPushButton("Clone repository")
+        clone_repo_btn = QPushButton("Clone Repository")
         clone_repo_btn.setStyleSheet("background-color: #313244; color: #89b4fa; border: none; padding: 8px; border-top-right-radius: 15px; border-bottom-right-radius: 15px;")
         clone_repo_btn.clicked.connect(self.clone_git_repo)
         
