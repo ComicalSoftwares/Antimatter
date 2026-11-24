@@ -1,0 +1,54 @@
+name: Nightly Build
+
+on:
+  schedule:
+    - cron: '0 14 * * *' # Runs daily at 14:00 UTC (15:00 UTC+1)
+  workflow_dispatch: # Lets you trigger a build manually from GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r src/requirements.txt pyinstaller
+
+      - name: Build Antimatter's Nightly version
+        run: |
+          pyinstaller --onefile --windowed --icon "AppIcon.png" --name "Antimatter" --add-data "AppIcon.ico:." --add-data "AppIcon.png:." --add-data "src/about.txt:." src/main.py
+
+      - name: Get latest commit info
+        id: commit_info
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          COMMIT_AUTHOR=$(git log -1 --pretty=%an)
+          echo "msg=$COMMIT_MSG" >> "$GITHUB_OUTPUT"
+          echo "short=$COMMIT_SHORT" >> "$GITHUB_OUTPUT"
+          echo "author=$COMMIT_AUTHOR" >> "$GITHUB_OUTPUT"
+
+      - name: Publish nightly release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Antimatter Nightly Build
+          prerelease: true
+          make_latest: false
+          files: dist/Antimatter
+          body: |
+            # Antimatter Nightly
+            This is a **nightly build** for Antimatter, it may be unstable.. **use at your own risk & do not open issues related to these nightly builds.**
+            This build contains the last set of commits pushed to this repo:
+            - `${{ steps.commit_info.outputs.short }}` — ${{ steps.commit_info.outputs.msg }} (${{ steps.commit_info.outputs.author }})
