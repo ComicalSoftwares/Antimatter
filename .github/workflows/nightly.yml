@@ -25,14 +25,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r src/requirements.txt pyinstaller
 
-      - name: Build Antimatter's Nightly version
+      - name: Build Antimatter's next Nightly version
         run: |
           pyinstaller --onefile --windowed --icon "AppIcon.png" --name "Antimatter" --add-data "AppIcon.ico:." --add-data "AppIcon.png:." --add-data "src/about.txt:." src/main.py
 
       - name: Get latest commit info
         id: commit_info
         run: |
-          COMMIT_MSG=$(git log -1 --pretty=%s)
+          COMMIT_MSG=$(git log -10 --pretty=%s)
           COMMIT_SHORT=$(git rev-parse --short HEAD)
           COMMIT_AUTHOR=$(git log -1 --pretty=%an)
           echo "msg=$COMMIT_MSG" >> "$GITHUB_OUTPUT"
