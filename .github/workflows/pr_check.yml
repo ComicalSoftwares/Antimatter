@@ -65,7 +65,11 @@ jobs:
           python-version: '3.14'
 
       - name: Install dependencies and build Linux binary
+        if: steps.merge_check.outputs.conflict == 'false'
         run: |
           python -m pip install --upgrade pip
           pip install -r src/requirements.txt pyinstaller
           pyinstaller --onefile --windowed --icon "AppIcon.png" --name "Antimatter" --add-data "AppIcon.ico:." --add-data "AppIcon.png:." --add-data "src/about.txt:." src/main.py
+          chmod +x dist/Antimatter
+          sudo apt-get update && sudo apt-get install -y xvfb
+          timeout 10s xvfb-run -a ./dist/Antimatter || true
