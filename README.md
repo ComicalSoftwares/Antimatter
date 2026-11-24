@@ -89,11 +89,11 @@ And to make it satisfy these needs, then we'll have to add all of these necessar
 - [X] Custom fonts
 - [ ] Modify position of the sidebar (File Manager) **(Exists but it doesn't save the new position)**
 ### Git support
-- [ ] Git clone (Will re-add)
+- [X] Git clone
 - [X] Git commit
 - [X] Git Push
 - [X] Git Sync
-- [X] Git dashboard (To do all of the actions mentioned above)
+- [X] Git dashboard (To do all of the git actions mentioned above)
 
 ## Support
 Antimatter is indeed full of bugs, we won't lie. And this is why we will happily help you fix these issues via one of these 3 support methods:
