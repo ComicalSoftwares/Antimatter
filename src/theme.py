@@ -41,15 +41,15 @@ def mono_font(size=13):
     f.setFixedPitch(True)
     return f
 
-tab_bar ="""
+tab_bar = """
             QTabWidget::pane {
                 border: none;
                 background: #19191a;
-                
+                border-bottom-left-radius: 15px;
+                border-bottom-right-radius: 15px;
             }
             QTabBar {
                 background: #363636;
-                
             }
             QTabBar::tab {
                 background: #363636;
@@ -57,27 +57,27 @@ tab_bar ="""
                 padding: 7px 7px;
                 font-family: 'Consolas', 'Cantarell';
                 font-size: 13px;
-                border: none;  
+                border: none;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
             }
             QTabBar::tab:selected {
                 background: #19191a;
                 color: #cdd6f4;
-                
             }
             QTabBar::close-button {
                 image: none;
                 subcontrol-position: right;
                 width: 14px;
                 height: 14px;
-                
             }
             QTabBar::tab:selected QTabBar::close-button {
                 background: #f38ba8;
-                
+                border-radius: 7px;
             }
             QTabBar::tab:hover QTabBar::close-button {
                 background: #f38ba8;
-                
+                border-radius: 7px;
             }
         """
         
@@ -89,7 +89,6 @@ window = """
                 color: #cdd6f4;
                 font-family: 'Consolas', 'Cantarell';
                 font-size: 12px;
-                
             }
             QDockWidget::title {
                 background: #2a2a2e;
@@ -97,6 +96,7 @@ window = """
                 padding-top: 4px;
                 padding-bottom: 4px;
                 border-bottom: 1px solid #1e1e1e;
+                border-top-right-radius: 10px;
             }
             QTreeView {
                 background-color: #1e1e1e;
@@ -198,6 +198,7 @@ code = """
                 background-color: #19191a;
                 color: #D8DEE9;
                 border: none;
+                border-radius: 15px;
                 selection-background-color: #2e3c64;
             }
         """
@@ -235,15 +236,32 @@ git_tab = """
 diff_browser = """
             background-color: #141415; color: #cdd6f4;
             font-family: Consolas;
-            font-size: 11px; border-radius: 4px;"""
+            font-size: 11px; border-radius: 15px;"""
 
 table = """
             QTableWidget {
-                background-color: #19191a; color: #cdd6f4; gridline-color: #313244;
-                border: 1px solid #313244; font-family: Consolas; font-size: 11px;
+                background-color: #19191a;
+                color: #cdd6f4;
+                gridline-color: #313244;
+                border: 1px solid #313244;
+                border-radius: 6px;
+                font-family: Consolas;
+                font-size: 12px;
             }
-            QHeaderView::section { background-color: #2a2a2e; color: #cdd6f4; padding: 4px; border: none; border-bottom: 1px solid #313244; }
-            QTableWidget::item:selected { background-color: #313244; color: white; }
+            QHeaderView::section {
+                background-color: #2a2a2e;
+                color: #cdd6f4;
+                padding: 5px;
+                border: none;
+                border-bottom: 1px solid #313244;
+            }
+            QTableWidget::item {
+                padding: 4px;
+            }
+            QTableWidget::item:selected {
+                background-color: #313244;
+                color: white;
+            }
         """
 
 issues = """
@@ -278,6 +296,7 @@ terminal = """
                 color: #d4d4d4;
                 font-family: 'Consolas', 'Monospace';
                 font-size: 11pt;
+                border-radius: 15px;
             }
         """
         
