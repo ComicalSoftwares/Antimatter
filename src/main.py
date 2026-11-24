@@ -12,16 +12,16 @@ from PyQt6.QtWidgets import (
     QDockWidget, QMenu, QInputDialog, QStackedWidget,
     QGraphicsColorizeEffect, QLabel)
 
-# To anyone looking at this mess, don't mind the comments on these imports,
-# they're just internet jokes that I personally find funny lol
+# Anything imported here are the custom modules that
+# Antimatter depends on..
 
-import codeview # Codeview, my beloved
-import task # For debugging/compiling stuff
-import util # I don't remember adding this but welp.
-import terminal # sudo rm -rf /* --yes-preserve-root  (Uh yeah so don't run that tho)
-import git # git commit -m "Minor Changes" +12,73625 Insertions (+) -171537723572,1752662453 deletions (-)
-import discord # /ban @Rocky felt like it
-from issues import IssuesDialog # 123762 Warnings 0 Errors, seems good enough
+import codeview
+import task
+import util
+import terminal
+import git
+import discord
+from issues import IssuesDialog
 import theme
 import settings
 import preferences
