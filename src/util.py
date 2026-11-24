@@ -14,7 +14,7 @@ from PyQt6.QtCore import Qt
 import html
 import theme
 
-CURRENT_VERSION = "2.0 - BETA" # We moving so fast..
+CURRENT_VERSION = "2.0 | BETA" # We moving so fast..
 BASE_DIR = Path(__file__).resolve().parent
 
 def project():
