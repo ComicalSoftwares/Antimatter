@@ -146,7 +146,7 @@ class AntimatterApp(QMainWindow):
         self.tabs.setStyleSheet(theme.tab_bar)
         self.stack.addWidget(self.tabs)
 
-        # Live Terminal Widget (That's broken)
+        # Live Terminal Widget
         self.terminal_container = QWidget()
         term_layout = QVBoxLayout(self.terminal_container)
         term_layout.setContentsMargins(5, 5, 5, 5)
