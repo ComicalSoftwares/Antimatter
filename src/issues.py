@@ -10,9 +10,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QColor
 import theme
 
-RUFF_RULES = "E9,F,B,PLE,E711,E712,E722"
-RUFF_IGNORE = "B904"
-
 class IssuesDialog(QDialog):
     def __init__(self, editor_view, parent=None):
         super().__init__(parent)
@@ -34,6 +31,7 @@ class IssuesDialog(QDialog):
         
         self.table = QTableWidget()
         self.table.setColumnCount(3)
+        self.table.verticalHeader().setVisible(False)
         self.table.setHorizontalHeaderLabels(["Line:Col", "Type", "Description"])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
@@ -46,7 +44,7 @@ class IssuesDialog(QDialog):
         
         btn_layout = QHBoxLayout()
         self.refresh_btn = QPushButton("Re-scan")
-        self.refresh_btn.setStyleSheet("background-color: #313244; color: #cdd6f4; border: none; padding: 6px 14px; border-radius: 4px;")
+        self.refresh_btn.setStyleSheet("background-color: #313244; color: #cdd6f4; border: none; padding: 6px 14px; border-radius: 15px;")
         self.refresh_btn.clicked.connect(self.run_scan)
         
         hint_lbl = QLabel("Double-click an issue to jump to line")
@@ -81,7 +79,7 @@ class IssuesDialog(QDialog):
             return
             
         try:
-            res = subprocess.run([sys.executable, "-m", "ruff", "check", "--isolated","--select", RUFF_RULES, "--ignore", RUFF_IGNORE,"--output-format=concise", self.file_path],capture_output=True, text=True)
+            res = subprocess.run([sys.executable, "-m", "ruff", "check", "--output-format=concise", self.file_path],capture_output=True, text=True)
             lines = (res.stdout + res.stderr).splitlines()
 
             row = 0
