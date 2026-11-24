@@ -1,6 +1,3 @@
-import subprocess
-import os
-import html
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
@@ -10,6 +7,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QDir
 from PyQt6.QtGui import QColor
 import theme
+import subprocess
+import os
+import html
 
 BASE_DIR = Path(__file__).resolve().parent
 ICON_PATH = str(BASE_DIR / "AppIcon.png")
@@ -56,6 +56,7 @@ class GitManagerDialog(QDialog):
         left_layout.addWidget(QLabel("<b>Working Tree & Changes</b>"))
         
         self.status_table = QTableWidget()
+        self.status_table.verticalHeader().setVisible(False)
         self.status_table.setColumnCount(2)
         self.status_table.setHorizontalHeaderLabels(["Status", "File Path"])
         self.status_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -66,12 +67,12 @@ class GitManagerDialog(QDialog):
         left_layout.addWidget(self.status_table)
         
         btn_box = QHBoxLayout()
-        stage_btn = QPushButton("Stage Selected Files")
-        stage_btn.setStyleSheet("background-color: #313244; color: #a6e3a1; border: none; padding: 5px; border-radius: 4px;")
+        stage_btn = QPushButton("Stage Selected File")
+        stage_btn.setStyleSheet("background-color: #313244; color: #a6e3a1; border: none; padding: 8px; border-top-left-radius: 15px; border-bottom-left-radius: 15px;")
         stage_btn.clicked.connect(self.stage_selected)
         
-        refresh_btn = QPushButton("Refresh")
-        refresh_btn.setStyleSheet("background-color: #313244; color: #cdd6f4; border: none; padding: 5px; border-radius: 4px;")
+        refresh_btn = QPushButton("Refresh list")
+        refresh_btn.setStyleSheet("background-color: #313244; color: #cdd6f4; border: none; padding: 8px; border-top-right-radius: 15px; border-bottom-right-radius: 15px;")
         refresh_btn.clicked.connect(self.refresh_status)
         
         btn_box.addWidget(stage_btn)
@@ -80,12 +81,12 @@ class GitManagerDialog(QDialog):
         
         left_layout.addWidget(QLabel("<b>Commit Changes</b>"))
         self.commit_input = QLineEdit()
-        self.commit_input.setPlaceholderText("Enter commit message...")
-        self.commit_input.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: 1px solid #313244; padding: 6px; border-radius: 4px;")
+        self.commit_input.setPlaceholderText("Enter commit message for each file...")
+        self.commit_input.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: 1px solid #313244; padding: 6px; border-radius: 15px;")
         left_layout.addWidget(self.commit_input)
         
         commit_btn = QPushButton("Commit Staged Changes")
-        commit_btn.setStyleSheet("background-color: #89b4fa; color: #1e1e1e; font-weight: bold; border: none; padding: 6px; border-radius: 4px;")
+        commit_btn.setStyleSheet("background-color: #89b4fa; color: #1e1e1e; font-weight: bold; border: none; padding: 6px; border-radius: 15px;")
         commit_btn.clicked.connect(self.do_commit)
         left_layout.addWidget(commit_btn)
         
@@ -111,11 +112,11 @@ class GitManagerDialog(QDialog):
         layout = QVBoxLayout(widget)
         layout.addWidget(QLabel("<b>Commit History</b>"))
         self.log_browser = QTextBrowser()
-        self.log_browser.setStyleSheet("background-color: #141415; color: #cdd6f4; border: none; font-family: Consolas; font-size: 12px; border-radius: 4px;")
+        self.log_browser.setStyleSheet("background-color: #141415; color: #cdd6f4; border: none; font-family: Consolas; font-size: 12px; border-radius: 15px;")
         layout.addWidget(self.log_browser)
         
         log_btn = QPushButton("Refresh Log")
-        log_btn.setStyleSheet("background-color: #313244; color: #cdd6f4; border: none; padding: 6px; border-radius: 4px;")
+        log_btn.setStyleSheet("background-color: #313244; color: #cdd6f4; border: none; padding: 6px; border-radius: 15px;")
         log_btn.clicked.connect(self.refresh_log)
         layout.addWidget(log_btn)
         
@@ -128,34 +129,41 @@ class GitManagerDialog(QDialog):
         layout.addWidget(QLabel("<b>Remote Synchronization and Branching</b>"))
         
         form_layout = QVBoxLayout()
+        form2_layout = QHBoxLayout()
         self.remote_url_input = QLineEdit()
-        self.remote_url_input.setPlaceholderText("https://github.com/username/repo.git")
-        self.remote_url_input.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: 1px solid #313244; padding: 6px; border-radius: 4px;")
+        self.remote_url_input.setPlaceholderText("https://example.com/username/repo.git")
+        self.remote_url_input.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: 1px solid #313244; padding: 6px; border-radius: 15px;")
         
         init_repo_btn = QPushButton("Initialize and Set Remote")
-        init_repo_btn.setStyleSheet("background-color: #313244; color: #89b4fa; border: none; padding: 8px; border-radius: 4px;")
+        init_repo_btn.setStyleSheet("background-color: #313244; color: #89b4fa; border: none; padding: 8px; border-top-left-radius: 15px; border-bottom-left-radius: 15px;")
         init_repo_btn.clicked.connect(self.set_remote_repo)
+        clone_repo_btn = QPushButton("Clone repository")
+        clone_repo_btn.setStyleSheet("background-color: #313244; color: #89b4fa; border: none; padding: 8px; border-top-right-radius: 15px; border-bottom-right-radius: 15px;")
+        clone_repo_btn.clicked.connect(self.clone_git_repo)
         
         form_layout.addWidget(QLabel("Remote Repository URL:"))
         form_layout.addWidget(self.remote_url_input)
-        form_layout.addWidget(init_repo_btn)
+        form2_layout.addWidget(init_repo_btn)
+        form2_layout.addWidget(clone_repo_btn)
+        form_layout.addLayout(form2_layout)
         form_layout.addSpacing(15)
         
         sync_box = QHBoxLayout()
-        pull_btn = QPushButton("Pull Changes")
-        pull_btn.setStyleSheet("background-color: #313244; color: #a6e3a1; border: none; padding: 8px; border-radius: 4px;")
-        pull_btn.clicked.connect(self.do_pull)
         
         self.branch_input = QLineEdit("main")
-        self.branch_input.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: 1px solid #313244; padding: 6px; border-radius: 4px;")
+        self.branch_input.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: 2px solid #313244; padding: 6px; border-top-left-radius: 15px; border-bottom-left-radius: 15px;")
+        
+        pull_btn = QPushButton("Pull Changes")
+        pull_btn.setStyleSheet("background-color: #313244; color: #89b4fa; border: 1px solid #313244; padding: 8px; border-radius: none;")
+        pull_btn.clicked.connect(self.do_pull)
         
         push_btn = QPushButton("Push Changes")
-        push_btn.setStyleSheet("background-color: #89b4fa; color: #1e1e1e; font-weight: bold; border: none; padding: 8px; border-radius: 4px;")
+        push_btn.setStyleSheet("background-color: #89b4fa; color: #1e1e1e; font-weight: bold; border: none; padding: 8px; border-top-right-radius: 15px; border-bottom-right-radius: 15px;")
         push_btn.clicked.connect(self.do_push)
         
-        sync_box.addWidget(pull_btn)
         sync_box.addWidget(QLabel("Branch:"))
         sync_box.addWidget(self.branch_input)
+        sync_box.addWidget(pull_btn)
         sync_box.addWidget(push_btn)
         
         form_layout.addLayout(sync_box)
@@ -202,8 +210,8 @@ class GitManagerDialog(QDialog):
         if not items: return
         filepath = self.status_table.item(items[0].row(), 1).text()
         try:
-            res = subprocess.run(["git", "diff", "--", filepath], cwd=self.project_dir, text=True, capture_output=True)
-            diff_text = res.stdout.strip() or subprocess.run(["git", "diff", "--cached", "--", filepath], cwd=self.project_dir, text=True, capture_output=True).stdout.strip()
+            res = subprocess.run(["git", "diff", "--", filepath], cwd=self.project_dir, check=True, text=True, capture_output=True)
+            diff_text = res.stdout.strip() or subprocess.run(["git", "diff", "--cached", "--", filepath], cwd=self.project_dir, check=True, text=True, capture_output=True).stdout.strip()
             if not diff_text: diff_text = "(No diff available)"
             
             formatted = []
@@ -280,7 +288,7 @@ class GitManagerDialog(QDialog):
 
             self.log_browser.setHtml("".join(entries))
         except subprocess.CalledProcessError:
-            self.log_browser.setPlainText("Not a git repository.")
+            self.log_browser.setPlainText("That's not a valid git repository.")
         except Exception as e:
             self.log_browser.setPlainText(str(e))
 
@@ -293,10 +301,20 @@ class GitManagerDialog(QDialog):
             QMessageBox.information(self, "Success", "Remote origin added!")
         except subprocess.CalledProcessError as e:
             QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
+            
+    def clone_git_repo(self):
+        url = self.remote_url_input.text().strip()
+        if not url: return
+        try:
+            subprocess.run(["git", "clone", url], cwd=self.project_dir, check=True, capture_output=True, text=True)
+            QMessageBox.information(self, "Success", "Cloned Repository successfully !")
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
 
     def do_pull(self):
+        branch = self.branch_input.text().strip() or "main"
         try:
-            subprocess.run(["git", "pull"], cwd=self.project_dir, check=True, capture_output=True, text=True)
+            subprocess.run(["git", "pull", "origin", branch], cwd=self.project_dir, check=True, capture_output=True, text=True)
             QMessageBox.information(self, "Success", "Pulled successfully!")
             self.refresh_log()
         except subprocess.CalledProcessError as e:
