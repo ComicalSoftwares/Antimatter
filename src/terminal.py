@@ -147,7 +147,7 @@ class WindowsPtyBackend(QObject):
         super().__init__(parent)
         if PtyProcess is None:
             raise RuntimeError(
-                "pywinpty is required for the terminal on Windows. "
+                "Module pywinpty is required for the terminal on Windows. "
                 "Install it with: pip install pywinpty"
             )
         self.shell_cmd = shell_cmd or (os.environ.get("COMSPEC") or "cmd.exe")
@@ -194,7 +194,8 @@ class TerminalWidget(QWidget):
     def __init__(self, parent=None, shell_cmd=None):
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAutoFillBackground(False)
         self.setMouseTracking(False)
 
         self.font = theme.mono_font(11)
@@ -246,8 +247,16 @@ class TerminalWidget(QWidget):
             self.update()
 
     def paintEvent(self, event):
-        from PyQt6.QtGui import QPainter
+        from PyQt6.QtGui import QPainter, QPainterPath, QColor
+        from PyQt6.QtCore import QRectF
+
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(self.rect()), 10, 10)
+        painter.setClipPath(path)
+
         painter.fillRect(self.rect(), QColor(DEFAULT_BG))
         painter.setFont(self.font)
 
@@ -413,6 +422,7 @@ class AntimatterTerminal(QWidget):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         self.term = TerminalWidget(self)
         layout.addWidget(self.term)
 
