@@ -42,13 +42,13 @@ jobs:
       - name: Publish nightly release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: nightly
-          name: Antimatter Nightly Build
+          tag_name: nightly-${{ github.run_number }}
+          name: Antimatter Nightly Build (#${{ github.run_number }})
           prerelease: true
           make_latest: false
           files: dist/Antimatter
           body: |
             # Antimatter Nightly
-            This is a **nightly build** for Antimatter, it may be unstable.. **use at your own risk & do not open issues related to these nightly builds.**
+            This is a **nightly build** for Antimatter, it may be unstable.. **use at your own risk and do not open issues concerning nightly builds.**
             This build contains the last set of commits pushed to this repo:
             - `${{ steps.commit_info.outputs.short }}` — ${{ steps.commit_info.outputs.msg }} (${{ steps.commit_info.outputs.author }})
