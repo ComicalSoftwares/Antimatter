@@ -3,3 +3,4 @@ pypresence
 pygments
 python-lsp-server
 pyte
+pywinpty
