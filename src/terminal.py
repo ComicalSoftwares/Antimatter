@@ -147,8 +147,8 @@ class WindowsPtyBackend(QObject):
         super().__init__(parent)
         if PtyProcess is None:
             raise RuntimeError(
-                "Module pywinpty is required for the terminal on Windows. "
-                "Install it with: pip install pywinpty"
+                "Module pywinpty is required for the terminal module to work on Windows. "
+                "Install it with: 'pip install pywinpty'"
             )
         self.shell_cmd = shell_cmd or (os.environ.get("COMSPEC") or "cmd.exe")
         self.process = None

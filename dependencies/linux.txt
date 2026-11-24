@@ -1,0 +1,6 @@
+PyQT6
+ruff
+pypresence
+pygments
+python-lsp-server
+pyte
