@@ -67,7 +67,7 @@ class GitManagerDialog(QDialog):
         left_layout.addWidget(self.status_table)
         
         btn_box = QHBoxLayout()
-        stage_btn = QPushButton("Stage This File")
+        stage_btn = QPushButton("Stage Selected File")
         stage_btn.setStyleSheet("background-color: #313244; color: #a6e3a1; border: none; padding: 8px; border-top-left-radius: 15px; border-bottom-left-radius: 15px;")
         stage_btn.clicked.connect(self.stage_selected)
         
@@ -79,9 +79,15 @@ class GitManagerDialog(QDialog):
         btn_box.addWidget(refresh_btn)
         left_layout.addLayout(btn_box)
         
+        stage_all_btn = QPushButton("Stage Everything")
+        stage_all_btn.setStyleSheet("background-color: #313244; color: #cdd6f4; border: none; padding: 8px; border-radius: 15px;")
+        stage_all_btn.clicked.connect(self.stage_all)
+        
+        left_layout.addWidget(stage_all_btn)
+        
         left_layout.addWidget(QLabel("<b>Commit Changes</b>"))
         self.commit_input = QLineEdit()
-        self.commit_input.setPlaceholderText("Enter commit message for each file...")
+        self.commit_input.setPlaceholderText("Enter a commit message...")
         self.commit_input.setStyleSheet("background-color: #19191a; color: #cdd6f4; border: 1px solid #313244; padding: 6px; border-radius: 15px;")
         left_layout.addWidget(self.commit_input)
         
@@ -234,11 +240,18 @@ class GitManagerDialog(QDialog):
             self.refresh_status()
         except subprocess.CalledProcessError as e:
             QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
+            
+    def stage_all(self):
+        try:
+            subprocess.run(["git", "add", "."], cwd=self.project_dir, check=True, capture_output=True, text=True)
+            self.refresh_status()
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", e.stderr or e.stdout or str(e))
 
     def do_commit(self):
         msg = self.commit_input.text().strip()
         if not msg:
-            QMessageBox.warning(self, "Commit message is required", "A commit message is required to commit changes.")
+            QMessageBox.warning(self, "Commit message required", "You have to write a commit message first.")
             return
         try:
             subprocess.run(["git", "commit", "-m", msg], cwd=self.project_dir, check=True, capture_output=True, text=True)
