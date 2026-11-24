@@ -6,4 +6,7 @@ Flatpak/repo
 Flatpak/build
 build-dir
 repo
+build/
+dist/
+*.spec
 
