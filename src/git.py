@@ -14,7 +14,7 @@ import html
 BASE_DIR = Path(__file__).resolve().parent
 ICON_PATH = str(BASE_DIR / "AppIcon.png")
 
-class GitManagerDialog(QDialog):
+class GitManagerDialog(QDialog)
     def __init__(self, project_dir=None, parent=None):
         super().__init__(parent)
         self.project_dir = project_dir or os.getcwd()
