@@ -14,6 +14,12 @@
 A modern, fast and responsive Python/Markdown IDE written in **Python and PyQt6**
 </div>
 
+> [!Important]
+> **Project is currently in maintenance mode**
+> We will not merge new PRs adding next features on the roadmap until maintenance mode is over.
+> Next patches/updates/nightlies will focus on stability rather than adding features. Thank you for understanding.
+
+
 > [!WARNING]
 > Antimatter's current development status is in **BETA**. While totally usable as a daily driver, we do not recommend you to uninstall your current IDE yet. You can still switch now, but don't expect it to be perfect.. yet !
 
